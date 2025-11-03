@@ -2320,9 +2320,11 @@ do
             FreecamHead = nil
         end
 
-        -- Restore original camera subject
-        if OriginalCameraSubject and OriginalCameraSubject.Parent then
-            workspace.CurrentCamera.CameraSubject = OriginalCameraSubject
+        -- Restore original camera subject only if current subject is the freecam head
+        if workspace.CurrentCamera.CameraSubject == FreecamHead then
+            if OriginalCameraSubject and OriginalCameraSubject.Parent then
+                workspace.CurrentCamera.CameraSubject = OriginalCameraSubject
+            end
         end
 
         OriginalCameraSubject = nil
