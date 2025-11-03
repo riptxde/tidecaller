@@ -1763,11 +1763,11 @@ RegisterArgType('player', {
         return FindPlayerByName(Str)
     end,
     GetSuggestions = function(Query, PreviousArgs)
-        local SearchUsername = false
+        local SearchUsernameOnly = false
         local SearchQuery = Query
 
         if SearchQuery:sub(1, 1) == '@' then
-            SearchUsername = true
+            SearchUsernameOnly = true
             SearchQuery = SearchQuery:sub(2)
         end
 
@@ -1775,7 +1775,7 @@ RegisterArgType('player', {
         local AllPlayers = Players:GetPlayers()
         local MatchedPlayers = {}
 
-        local function CalculateScore(Name)
+        local function CalculateScore(Name, IsUsername)
             local LowerName = Name:lower()
             local StartPos = LowerName:find(SearchQuery, 1, true)
 
@@ -1785,33 +1785,59 @@ RegisterArgType('player', {
 
             local PositionScore = StartPos
             local LengthRatio = #SearchQuery / #Name
-            return PositionScore - (LengthRatio * 0.5)
-        end
+            local BaseScore = PositionScore - (LengthRatio * 0.5)
 
-        if not SearchUsername then
-            for I = 1, #AllPlayers do
-                local Player = AllPlayers[I]
-                if SearchQuery == '' or Player.DisplayName:lower():find(SearchQuery, 1, true) ~= nil then
-                    local Score = SearchQuery == '' and 0 or CalculateScore(Player.DisplayName)
-                    MatchedPlayers[#MatchedPlayers + 1] = {
-                        Data = Player,
-                        Score = Score,
-                        SortName = Player.DisplayName:lower()
-                    }
-                end
+            -- Add penalty for username matches (unless searching username only)
+            if IsUsername and not SearchUsernameOnly then
+                BaseScore = BaseScore + 1000
             end
+
+            return BaseScore
         end
 
-        if SearchUsername then
+        if SearchUsernameOnly then
+            -- Only search usernames when @ prefix is used
             for I = 1, #AllPlayers do
                 local Player = AllPlayers[I]
                 if SearchQuery == '' or Player.Name:lower():find(SearchQuery, 1, true) ~= nil then
-                    local Score = SearchQuery == '' and 0 or CalculateScore(Player.Name)
+                    local Score = SearchQuery == '' and 0 or CalculateScore(Player.Name, true)
                     MatchedPlayers[#MatchedPlayers + 1] = {
                         Data = Player,
                         Score = Score,
                         SortName = Player.Name:lower()
                     }
+                end
+            end
+        else
+            -- Search both display names and usernames
+            local AddedPlayers = {}
+
+            -- First pass: Display names
+            for I = 1, #AllPlayers do
+                local Player = AllPlayers[I]
+                if SearchQuery == '' or Player.DisplayName:lower():find(SearchQuery, 1, true) ~= nil then
+                    local Score = SearchQuery == '' and 0 or CalculateScore(Player.DisplayName, false)
+                    MatchedPlayers[#MatchedPlayers + 1] = {
+                        Data = Player,
+                        Score = Score,
+                        SortName = Player.DisplayName:lower()
+                    }
+                    AddedPlayers[Player] = true
+                end
+            end
+
+            -- Second pass: Usernames (with penalty)
+            for I = 1, #AllPlayers do
+                local Player = AllPlayers[I]
+                if not AddedPlayers[Player] then
+                    if SearchQuery == '' or Player.Name:lower():find(SearchQuery, 1, true) ~= nil then
+                        local Score = SearchQuery == '' and 1000 or CalculateScore(Player.Name, true)
+                        MatchedPlayers[#MatchedPlayers + 1] = {
+                            Data = Player,
+                            Score = Score,
+                            SortName = Player.Name:lower()
+                        }
+                    end
                 end
             end
         end
