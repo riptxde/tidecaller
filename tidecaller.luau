@@ -46,6 +46,7 @@ local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local CoreGui = game:GetService('CoreGui')
 local Players = game:GetService('Players')
 local TeleportService = game:GetService('TeleportService')
+local TextChatService = game:GetService('TextChatService')
 local GuiService = game:GetService('GuiService')
 local Lighting = game:GetService('Lighting')
 
@@ -1569,99 +1570,117 @@ C[#C + 1] = InputBox:GetPropertyChangedSignal('Text'):Connect(function()
     end
 end)
 
-C[#C + 1] = InputBox.FocusLost:Connect(function(EnterPressed)
-    if EnterPressed then
-        -- Execute the command
-        local Input = InputBox.Text
-        local Parts, CurrentArgIndex, CurrentArgText = ParseCommandInput(Input)
+--/ Command Execution /--
+local function ExecuteCommand(Input)
+    -- Remove prefix if present
+    if Input:sub(1, #PREFIX) == PREFIX then
+        Input = Input:sub(#PREFIX + 1)
+    end
 
-        -- Add the current part if it's not empty
-        -- Check if the input doesn't end with a space (meaning we're still typing an argument)
-        if #CurrentArgText > 0 and Input:sub(#Input, #Input) ~= ' ' then
-            Parts[#Parts + 1] = CurrentArgText
-        end
+    local Parts, CurrentArgIndex, CurrentArgText = ParseCommandInput(Input)
 
-        if #Parts > 0 then
-            local CommandName = Parts[1]:lower()
+    -- Add the current part if it's not empty
+    -- Check if the input doesn't end with a space (meaning we're still typing an argument)
+    if #CurrentArgText > 0 and Input:sub(#Input, #Input) ~= ' ' then
+        Parts[#Parts + 1] = CurrentArgText
+    end
 
-            -- Find matching command
-            local MatchedCommand = nil
-            for I = 1, #Commands do
-                local Command = Commands[I]
-                if Command.Name:lower() == CommandName then
+    if #Parts > 0 then
+        local CommandName = Parts[1]:lower()
+
+        -- Find matching command
+        local MatchedCommand = nil
+        for I = 1, #Commands do
+            local Command = Commands[I]
+            if Command.Name:lower() == CommandName then
+                MatchedCommand = Command
+                break
+            end
+
+            -- Check aliases
+            for J = 1, #Command.Aliases do
+                if Command.Aliases[J]:lower() == CommandName then
                     MatchedCommand = Command
-                    break
-                end
-
-                -- Check aliases
-                for J = 1, #Command.Aliases do
-                    if Command.Aliases[J]:lower() == CommandName then
-                        MatchedCommand = Command
-                        break
-                    end
-                end
-
-                if MatchedCommand then
                     break
                 end
             end
 
             if MatchedCommand then
-                -- Parse arguments using GetValue
-                local ParsedArgs = {}
-                local AllArgsParsed = true
-
-                for I = 1, #MatchedCommand.Args do
-                    local ArgTypeName = MatchedCommand.Args[I][1]
-                    local ArgName = MatchedCommand.Args[I][2]
-                    local IsOptional = MatchedCommand.Args[I][3]
-                    local DefaultValue = MatchedCommand.Args[I][4]
-                    local ArgType = ArgTypes[ArgTypeName]
-                    local RawValue = Parts[I + 1]
-
-                    if RawValue and ArgType and ArgType.GetValue then
-                        local ParsedValue = ArgType.GetValue(RawValue)
-                        if ParsedValue ~= nil then
-                            ParsedArgs[I] = ParsedValue
-                        else
-                            AllArgsParsed = false
-                            Notify('Error', ('%s: Argument Error'):format(MatchedCommand.Name), ('Failed to parse argument %d (%s) as %s'):format(I, ArgName, ArgTypeName))
-                            break
-                        end
-                    elseif RawValue then
-                        -- No GetValue function, use raw value
-                        ParsedArgs[I] = RawValue
-                    else
-                        -- Missing argument - check if it's optional
-                        if IsOptional then
-                            -- Use default value if provided
-                            ParsedArgs[I] = DefaultValue
-                        else
-                            -- Required argument is missing
-                            AllArgsParsed = false
-                            Notify('Error', ('%s: Missing Argument'):format(MatchedCommand.Name), ('Missing argument: %s'):format(ArgName))
-                            break
-                        end
-                    end
-                end
-
-                if AllArgsParsed then
-                    -- Execute the command
-                    local Success, ErrorMsg = pcall(function()
-                        MatchedCommand.Execute(unpack(ParsedArgs))
-                    end)
-
-                    if not Success then
-                        Notify('Error', ('%s: Execution Error'):format(MatchedCommand.Name), tostring(ErrorMsg))
-                    end
-                end
+                break
             end
         end
 
+        if MatchedCommand then
+            -- Parse arguments using GetValue
+            local ParsedArgs = {}
+            local AllArgsParsed = true
+
+            for I = 1, #MatchedCommand.Args do
+                local ArgTypeName = MatchedCommand.Args[I][1]
+                local ArgName = MatchedCommand.Args[I][2]
+                local IsOptional = MatchedCommand.Args[I][3]
+                local DefaultValue = MatchedCommand.Args[I][4]
+                local ArgType = ArgTypes[ArgTypeName]
+                local RawValue = Parts[I + 1]
+
+                if RawValue and ArgType and ArgType.GetValue then
+                    local ParsedValue = ArgType.GetValue(RawValue)
+                    if ParsedValue ~= nil then
+                        ParsedArgs[I] = ParsedValue
+                    else
+                        AllArgsParsed = false
+                        Notify('Error', ('%s: Argument Error'):format(MatchedCommand.Name), ('Failed to parse argument %d (%s) as %s'):format(I, ArgName, ArgTypeName))
+                        break
+                    end
+                elseif RawValue then
+                    -- No GetValue function, use raw value
+                    ParsedArgs[I] = RawValue
+                else
+                    -- Missing argument - check if it's optional
+                    if IsOptional then
+                        -- Use default value if provided
+                        ParsedArgs[I] = DefaultValue
+                    else
+                        -- Required argument is missing
+                        AllArgsParsed = false
+                        Notify('Error', ('%s: Missing Argument'):format(MatchedCommand.Name), ('Missing argument: %s'):format(ArgName))
+                        break
+                    end
+                end
+            end
+
+            if AllArgsParsed then
+                -- Execute the command
+                local Success, ErrorMsg = pcall(function()
+                    MatchedCommand.Execute(unpack(ParsedArgs))
+                end)
+
+                if not Success then
+                    Notify('Error', ('%s: Execution Error'):format(MatchedCommand.Name), tostring(ErrorMsg))
+                end
+            end
+        end
+    end
+end
+
+-- Command execution via Command Palette input box
+C[#C + 1] = InputBox.FocusLost:Connect(function(EnterPressed)
+    if EnterPressed then
+        ExecuteCommand(InputBox.Text)
         ClosePalette()
     else
         -- Unfocused without pressing enter
         ClosePalette()
+    end
+end)
+
+-- Command execution via in-game chat
+C[#C + 1] = TextChatService.SendingMessage:Connect(function(Message)
+    local Text = Message.Text
+
+    -- Check if the message starts with the prefix
+    if Text:sub(1, #PREFIX) == PREFIX then
+        ExecuteCommand(Text)
     end
 end)
 
