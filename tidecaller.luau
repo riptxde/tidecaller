@@ -1889,6 +1889,107 @@ RegisterCommand({
     end
 })
 
+-- Noclip
+do
+    local Noclipping = false
+    local NoclipConnection = nil
+
+    local function StopNoclip()
+        if not Noclipping then return end
+
+        Noclipping = false
+
+        if NoclipConnection then
+            NoclipConnection:Disconnect()
+            NoclipConnection = nil
+        end
+
+        -- Re-enable collision on all baseparts
+        local Char = GetLocalPlayerInfo()
+        if Char then
+            local Descendants = Char:GetDescendants()
+            for I = 1, #Descendants do
+                local Descendant = Descendants[I]
+                if Descendant:IsA('BasePart') then
+                    Descendant.CanCollide = true
+                end
+            end
+        end
+    end
+
+    local function StartNoclip()
+        if Noclipping then return end
+
+        local Char = GetLocalPlayerInfo()
+        if not Char then
+            return false, 'Character not found'
+        end
+
+        Noclipping = true
+
+        NoclipConnection = Stepped:Connect(function()
+            if not Noclipping then return end
+
+            local Char = GetLocalPlayerInfo()
+            if not Char then
+                StopNoclip()
+                return
+            end
+
+            local Descendants = Char:GetDescendants()
+            for I = 1, #Descendants do
+                local Descendant = Descendants[I]
+                if Descendant:IsA('BasePart') then
+                    Descendant.CanCollide = false
+                end
+            end
+        end)
+
+        C[#C + 1] = NoclipConnection
+
+        return true, nil
+    end
+
+    RegisterCommand({
+        Category = 'CHARACTER',
+        Name = 'noclip',
+        Args = {},
+        Aliases = {},
+        Description = 'Walk through walls',
+        Execute = function()
+            if Noclipping then
+                Notify('Warning', 'Noclip', 'Already noclipping')
+                return
+            end
+
+            local Success, ErrorMsg = StartNoclip()
+            if not Success then
+                Notify('Error', 'Noclip', ErrorMsg)
+                return
+            end
+
+            Notify('Success', 'Noclip', 'Noclip enabled')
+        end
+    })
+
+    RegisterCommand({
+        Category = 'CHARACTER',
+        Name = 'clip',
+        Args = {},
+        Aliases = {},
+        Description = 'Disable noclip',
+        Execute = function()
+            if not Noclipping then
+                Notify('Warning', 'Clip', 'Not currently noclipping')
+                return
+            end
+
+            StopNoclip()
+            Notify('Success', 'Clip', 'Noclip disabled')
+        end
+    })
+end
+
 -- Shared movement system for Fly and Freecam
 do
     -- Movement state
