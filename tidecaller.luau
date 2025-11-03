@@ -1,5 +1,5 @@
 --/ Config /--
-local PREFIX, HOTKEY = ';', 'Semicolon'
+local PREFIX, HOTKEY = "'", 'Quote'
 
 --/ Globals /--
 local INF = 1 / 0
@@ -22,6 +22,8 @@ G.Tidecaller = { -- API functions and resources to be set later
     RegisterArgType = nil,
     RegisterCommand = nil,
     RegisterCategory = nil,
+    GetLocalPlayerInfo = nil,
+    GetTargetPlayerInfo = nil,
     Loaded = false,
 }
 
@@ -37,6 +39,9 @@ local UserInputService = game:GetService('UserInputService')
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local CoreGui = game:GetService('CoreGui')
 local Players = game:GetService('Players')
+local TeleportService = game:GetService('TeleportService')
+local GuiService = game:GetService('GuiService')
+local Lighting = game:GetService('Lighting')
 
 --/ Objects /--
 local LP = Players.LocalPlayer
@@ -176,6 +181,42 @@ local function FindPlayerByName(Name)
 
     return nil
 end
+
+local function GetLocalPlayerInfo()
+    local Char = LP.Character
+    if not Char then
+        return nil, nil, nil, nil, nil
+    end
+
+    local Root = Char:FindFirstChild('HumanoidRootPart') or Char:FindFirstChild('Torso') or Char:FindFirstChild('UpperTorso')
+    local Humanoid = Char:FindFirstChildOfClass('Humanoid')
+    local Head = Char:FindFirstChild('Head')
+    local Part = Char:FindFirstChildWhichIsA('BasePart')
+
+    return Char, Root, Humanoid, Head, Part
+end
+
+local function GetTargetPlayerInfo(Player)
+    if not Player then
+        return nil, nil, nil, nil, nil, nil
+    end
+
+    local PChar = Player.Character
+    if not PChar then
+        return Player, nil, nil, nil, nil, nil
+    end
+
+    local PRoot = PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso') or PChar:FindFirstChild('HumanoidRootPart')
+    local PHumanoid = PChar:FindFirstChildOfClass('Humanoid')
+    local PHead = PChar:FindFirstChild('Head')
+    local PPart = PChar:FindFirstChildWhichIsA('BasePart')
+
+    return Player, PChar, PRoot, PHumanoid, PHead, PPart
+end
+
+-- Expose player info functions
+G.Tidecaller.GetLocalPlayerInfo = GetLocalPlayerInfo
+G.Tidecaller.GetTargetPlayerInfo = GetTargetPlayerInfo
 
 local function CreateAsset(Definition)
     -- Definition structure: {ClassName, Properties, Children}
@@ -1821,12 +1862,18 @@ RegisterCommand({
 
 RegisterCommand({
     Category = 'CHARACTER',
-    Name = 'speed',
+    Name = 'walkspeed',
     Args = {{'number', 'amount', true, 16}},
-    Aliases = {'ws'},
+    Aliases = {'speed', 'ws'},
     Description = 'Set your humanoid\'s walkspeed',
     Execute = function(Amount)
-        print('speed', Amount, type(Amount))
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        if not Humanoid then
+            Notify('Error', 'Walk Speed', 'Character or Humanoid not found')
+            return
+        end
+        Humanoid.WalkSpeed = Amount
+        Notify('Success', 'Walk Speed', ('Set walkspeed to %d'):format(Amount))
     end
 })
 
@@ -1837,7 +1884,13 @@ RegisterCommand({
     Aliases = {'jp', 'jpower'},
     Description = 'Set your humanoid\'s jump power',
     Execute = function(Amount)
-        print('jumppower', Amount, type(Amount))
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        if not Humanoid then
+            Notify('Error', 'Jump Power', 'Character or Humanoid not found')
+            return
+        end
+        Humanoid.JumpPower = Amount
+        Notify('Success', 'Jump Power', ('Set jump power to %d'):format(Amount))
     end
 })
 
@@ -1845,10 +1898,16 @@ RegisterCommand({
     Category = 'CHARACTER',
     Name = 'hipheight',
     Args = {{'number', 'amount', true, 0}},
-    Aliases = {'hh'},
+    Aliases = {'hh', 'hheight'},
     Description = 'Set your humanoid\'s hipheight',
     Execute = function(Amount)
-        print('hipheight', Amount, type(Amount))
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        if not Humanoid then
+            Notify('Error', 'Hip Height', 'Character or Humanoid not found')
+            return
+        end
+        Humanoid.HipHeight = Amount
+        Notify('Success', 'Hip Height', ('Set hip height to %d'):format(Amount))
     end
 })
 
@@ -1857,9 +1916,20 @@ RegisterCommand({
     Name = 'spectate',
     Args = {{'player', 'target'}},
     Aliases = {'view'},
-    Description = 'Specate a player',
+    Description = 'Spectate a player',
     Execute = function(Target)
-        print('spectate', Target, type(Target))
+        local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(Target)
+        if not Player then
+            Notify('Error', 'Spectate', 'Player not found')
+            return
+        end
+        local CameraSubject = PHumanoid or PHead or PRoot or PPart
+        if not CameraSubject then
+            Notify('Error', 'Spectate', 'Could not find valid camera subject')
+            return
+        end
+        workspace.CurrentCamera.CameraSubject = CameraSubject
+        Notify('Success', 'Spectate', ('Now spectating %s'):format(Player.DisplayName))
     end
 })
 
@@ -1870,7 +1940,18 @@ RegisterCommand({
     Aliases = {'unview'},
     Description = 'Stop spectating any player',
     Execute = function()
-        print('unspectate')
+        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        if not Char then
+            Notify('Error', 'Unspectate', 'Character not found')
+            return
+        end
+        local CameraSubject = Humanoid or Head or Root or Part
+        if not CameraSubject then
+            Notify('Error', 'Unspectate', 'Could not find valid camera subject')
+            return
+        end
+        workspace.CurrentCamera.CameraSubject = CameraSubject
+        Notify('Success', 'Unspectate', 'Returned camera to local player')
     end
 })
 
@@ -1881,7 +1962,9 @@ RegisterCommand({
     Aliases = {},
     Description = 'Allows your camera to pass through objects and zoom out much further',
     Execute = function()
-        print('thrucam')
+        LP.CameraMaxZoomDistance = 4.0e5
+        LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+        Notify('Success', 'Thrucam', 'Camera can now pass through objects')
     end
 })
 
@@ -1892,7 +1975,9 @@ RegisterCommand({
     Aliases = {},
     Description = 'Undoes any changes made to the camera',
     Execute = function()
-        print('fixcam')
+        LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+        Notify('Success', 'Fixcam', 'Camera reset to default')
     end
 })
 
@@ -1903,7 +1988,37 @@ RegisterCommand({
     Aliases = {},
     Description = 'Teleport to player',
     Execute = function(Target)
-        print('goto', Target, type(Target))
+        local Char, Root = GetLocalPlayerInfo()
+        if not Root then
+            Notify('Error', 'Goto', 'Character or HumanoidRootPart not found')
+            return
+        end
+
+        local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(Target)
+        if not Player then
+            Notify('Error', 'Goto', 'Player not found')
+            return
+        end
+
+        local TPPart = PRoot or PHead or PPart
+        if not TPPart then
+            Notify('Error', 'Goto', 'Could not find valid teleport target')
+            return
+        end
+
+        Root.CFrame = TPPart.CFrame
+
+        -- Reset velocities
+        local Descendants = Char:GetDescendants()
+        for I = 1, #Descendants do
+            local BasePart = Descendants[I]
+            if BasePart:IsA('BasePart') then
+                BasePart.Velocity = Vector3.new(0, 0, 0)
+                BasePart.RotVelocity = Vector3.new(0, 0, 0)
+            end
+        end
+
+        Notify('Success', 'Goto', ('Teleported to %s'):format(Player.DisplayName))
     end
 })
 
@@ -1922,10 +2037,11 @@ RegisterCommand({
     Category = 'WORLD',
     Name = 'gravity',
     Args = {{'number', 'amount'}},
-    Aliases = {},
+    Aliases = {'grav'},
     Description = 'Set the client\'s gravity',
     Execute = function(Amount)
-        print('gravity', Amount, type(Amount))
+        workspace.Gravity = Amount
+        Notify('Success', 'Gravity', ('Set gravity to %d'):format(Amount))
     end
 })
 
@@ -1933,10 +2049,35 @@ RegisterCommand({
     Category = 'WORLD',
     Name = 'resetgravity',
     Args = {},
-    Aliases = {},
+    Aliases = {'fixgrav', 'fixgravity'},
     Description = 'Reset the client\'s gravity to default',
     Execute = function()
-        print('resetgravity')
+        workspace.Gravity = 196.2
+        Notify('Success', 'Reset Gravity', 'Gravity reset to 196.2')
+    end
+})
+
+RegisterCommand({
+    Category = 'WORLD',
+    Name = 'fogend',
+    Args = {{'number', 'amount'}},
+    Aliases = {},
+    Description = 'Set the fog end distance',
+    Execute = function(Amount)
+        Lighting.FogEnd = Amount
+        Notify('Success', 'Fog End', ('Set fog end to %d'):format(Amount))
+    end
+})
+
+RegisterCommand({
+    Category = 'WORLD',
+    Name = 'nofog',
+    Args = {},
+    Aliases = {},
+    Description = 'Remove all fog',
+    Execute = function()
+        Lighting.FogEnd = 6.0e9
+        Notify('Success', 'No Fog', 'Fog removed')
     end
 })
 
@@ -1947,7 +2088,9 @@ RegisterCommand({
     Aliases = {'rj'},
     Description = 'Rejoin the server',
     Execute = function()
-        print('rejoin')
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+        wait(0.6)
+        GuiService:ClearError()
     end
 })
 
@@ -1958,7 +2101,43 @@ RegisterCommand({
     Aliases = {'hop'},
     Description = 'Join a different server',
     Execute = function()
-        print('serverhop')
+        local Success = false
+
+        repeat
+            Success = pcall(function()
+                local ValidJobIds = {}
+                local URL = 'https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true'
+                local Body = HttpService:JSONDecode(
+                    game:HttpGetAsync(URL:format(game.PlaceId))
+                )
+
+                if not Body then
+                    error('Failed to fetch server list')
+                end
+
+                if not Body.data then
+                    error('No server data found')
+                end
+
+                for I = 1, #Body.data do
+                    local Server = Body.data[I]
+
+                    if type(Server) ~= 'table' then continue end
+                    if Server.id == game.JobId then continue end
+                    if Server.playing >= Server.maxPlayers then continue end
+
+                    ValidJobIds[#ValidJobIds + 1] = Server.id
+                end
+
+                if #ValidJobIds == 0 then
+                    Notif('Error', 'Serverhop', 'No valid servers found')
+                end
+
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, ValidJobIds[Rand:NextInteger(1, #ValidJobIds)], LP)
+                wait(0.6)
+                GuiService:ClearError()
+            end)
+        until Success
     end
 })
 
@@ -1997,6 +2176,6 @@ RegisterCommand({
 
 --/ Main /--
 G.Tidecaller.Loaded = true
-Notify('Success', 'Script Loaded', ('Welcome to Tidecaller. Press %s to open the command palette'):format(HOTKEY))
+Notify('Success', 'Script Loaded', ('Welcome to Tidecaller. Press the %s button to open the command palette'):format(HOTKEY))
 wait(1)
 Notify('Info', 'Credits', 'Script developed by riptxde.')
