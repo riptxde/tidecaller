@@ -1321,7 +1321,8 @@ local function FilterCommands(Query)
         local ArgType = MatchedCommand.Args[ArgumentIndex][1]
         local ArgTypeConfig = ArgTypes[ArgType]
 
-        if ArgTypeConfig then
+        -- Only enter arg mode if both GetSuggestions and BuildPaletteItem exist
+        if ArgTypeConfig and ArgTypeConfig.GetSuggestions and ArgTypeConfig.BuildPaletteItem then
             -- Enter arg mode
             IsArgMode = true
             CurrentCommand = MatchedCommand
@@ -1663,12 +1664,6 @@ RegisterArgType('number', {
     Color = Colors.Yellow,
     GetValue = function(Str)
         return tonumber(Str)
-    end,
-    GetSuggestions = function(Query, PreviousArgs)
-        return {} -- No suggestions for numbers
-    end,
-    BuildPaletteItem = function(Data)
-        return nil, nil -- Numbers don't have suggestion items
     end
 })
 
@@ -1676,12 +1671,6 @@ RegisterArgType('string', {
     Color = Colors.Pink,
     GetValue = function(Str)
         return Str
-    end,
-    GetSuggestions = function(Query, PreviousArgs)
-        return {} -- No suggestions for strings
-    end,
-    BuildPaletteItem = function(Data)
-        return nil, nil -- Strings don't have suggestion items
     end
 })
 
@@ -1697,10 +1686,49 @@ RegisterArgType('boolean', {
         return nil
     end,
     GetSuggestions = function(Query, PreviousArgs)
-        return {} -- No suggestions for booleans
+        local Results = {}
+        local QueryLower = Query:lower()
+
+        -- Add 'true' if it matches the query
+        if QueryLower == '' or ('true'):find(QueryLower, 1, true) == 1 then
+            Results[#Results + 1] = 'true'
+        end
+
+        -- Add 'false' if it matches the query
+        if QueryLower == '' or ('false'):find(QueryLower, 1, true) == 1 then
+            Results[#Results + 1] = 'false'
+        end
+
+        return Results
     end,
-    BuildPaletteItem = function(Data)
-        return nil, nil -- Booleans don't have suggestion items
+    BuildPaletteItem = function(BoolValue)
+        local Padding = Create('UIPadding', {
+            PaddingLeft = UDim.new(0, 12)
+        })
+
+        local Lower = BoolValue:lower()
+
+        local TextColor
+        if Lower == 't' or Lower == 'true' or Lower == '1' then
+            TextColor = Colors.Green
+        else
+            TextColor = Colors.Red
+        end
+
+        local ValueLabel = Create('TextLabel', {
+            Name = 'BooleanValue',
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            FontFace = MonoFontBold,
+            Text = BoolValue,
+            TextColor3 = TextColor,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center
+        })
+
+        return BoolValue, {Padding, ValueLabel}
     end
 })
 
