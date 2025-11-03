@@ -2120,7 +2120,7 @@ RegisterCommand({
     Category = 'SERVER',
     Name = 'serverhop',
     Args = {},
-    Aliases = {'hop'},
+    Aliases = {'shop', 'hop'},
     Description = 'Join a different server',
     Execute = function()
         local Success = false
