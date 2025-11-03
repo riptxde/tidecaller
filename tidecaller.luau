@@ -1889,19 +1889,9 @@ RegisterCommand({
     end
 })
 
--- Fly/Unfly
+-- Shared movement system for Fly and Freecam
 do
-    local Flying = false
-    local FlyBodyPosition = nil
-    local FlyBodyGyro = nil
-    local FlyConnection = nil
-    local FlyInputConnection = nil
-    local FlyDiedConnection = nil
-    local CurrentTween = nil
-
-    local FlySpeed = 0
-    local TweenTime = 0.1
-
+    -- Movement state
     local MoveW = false
     local MoveA = false
     local MoveS = false
@@ -1909,18 +1899,9 @@ do
     local MoveQ = false
     local MoveE = false
 
-    local function UpdateFlyMovement()
-        if not Flying then return end
-
-        local Char, Root, Humanoid = GetLocalPlayerInfo()
-        if not Char or not Root or not Humanoid then
-            return
-        end
-
-        -- Calculate movement direction
+    local function CalculateMoveDirection()
         local Camera = workspace.CurrentCamera
         local CameraCFrame = Camera.CFrame
-
         local MoveDirection = Vector3.new(0, 0, 0)
 
         -- Forward/Backward (relative to camera, includes vertical component)
@@ -1952,9 +1933,93 @@ do
             MoveDirection = MoveDirection.Unit
         end
 
+        return MoveDirection
+    end
+
+    local function ResetMovementStates()
+        MoveW = false
+        MoveA = false
+        MoveS = false
+        MoveD = false
+        MoveQ = false
+        MoveE = false
+    end
+
+    local function CreateMovementInputConnections(UpdateCallback)
+        local BeganConnection = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
+            if GameProcessed then return end
+
+            if Input.KeyCode == Enum.KeyCode.W then
+                MoveW = true
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.A then
+                MoveA = true
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.S then
+                MoveS = true
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.D then
+                MoveD = true
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.Q then
+                MoveQ = true
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.E then
+                MoveE = true
+                UpdateCallback()
+            end
+        end)
+
+        local EndedConnection = UserInputService.InputEnded:Connect(function(Input, GameProcessed)
+            if Input.KeyCode == Enum.KeyCode.W then
+                MoveW = false
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.A then
+                MoveA = false
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.S then
+                MoveS = false
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.D then
+                MoveD = false
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.Q then
+                MoveQ = false
+                UpdateCallback()
+            elseif Input.KeyCode == Enum.KeyCode.E then
+                MoveE = false
+                UpdateCallback()
+            end
+        end)
+
+        return BeganConnection, EndedConnection
+    end
+
+    -- Fly/Unfly
+    local Flying = false
+    local FlyBodyPosition = nil
+    local FlyBodyGyro = nil
+    local FlyConnection = nil
+    local FlyInputBeganConnection = nil
+    local FlyInputEndedConnection = nil
+    local FlyDiedConnection = nil
+    local CurrentFlyTween = nil
+    local FlySpeed = 0
+    local FlyTweenTime = 0.1
+
+    local function UpdateFlyMovement()
+        if not Flying then return end
+
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        if not Char or not Root or not Humanoid then
+            return
+        end
+
+        local MoveDirection = CalculateMoveDirection()
+
         -- Cancel existing tween if any
-        if CurrentTween then
-            CurrentTween:Cancel()
+        if CurrentFlyTween then
+            CurrentFlyTween:Cancel()
         end
 
         -- Calculate target position
@@ -1962,14 +2027,14 @@ do
 
         -- Tween BodyPosition target to new position
         if FlyBodyPosition then
-            CurrentTween = Tween(FlyBodyPosition, TweenTime, 'Linear', 'Out', false, {
+            CurrentFlyTween = Tween(FlyBodyPosition, FlyTweenTime, 'Linear', 'Out', false, {
                 Position = TargetPosition
             })
         end
 
         -- Orient character to face camera direction (including vertical)
         if FlyBodyGyro then
-            FlyBodyGyro.CFrame = CameraCFrame
+            FlyBodyGyro.CFrame = workspace.CurrentCamera.CFrame
         end
     end
 
@@ -1977,14 +2042,7 @@ do
         if not Flying then return end
 
         Flying = false
-
-        -- Reset movement states
-        MoveW = false
-        MoveA = false
-        MoveS = false
-        MoveD = false
-        MoveQ = false
-        MoveE = false
+        ResetMovementStates()
 
         -- Disconnect connections
         if FlyConnection then
@@ -1992,9 +2050,14 @@ do
             FlyConnection = nil
         end
 
-        if FlyInputConnection then
-            FlyInputConnection:Disconnect()
-            FlyInputConnection = nil
+        if FlyInputBeganConnection then
+            FlyInputBeganConnection:Disconnect()
+            FlyInputBeganConnection = nil
+        end
+
+        if FlyInputEndedConnection then
+            FlyInputEndedConnection:Disconnect()
+            FlyInputEndedConnection = nil
         end
 
         if FlyDiedConnection then
@@ -2003,9 +2066,9 @@ do
         end
 
         -- Cancel current tween
-        if CurrentTween then
-            CurrentTween:Cancel()
-            CurrentTween = nil
+        if CurrentFlyTween then
+            CurrentFlyTween:Cancel()
+            CurrentFlyTween = nil
         end
 
         -- Destroy BodyPosition
@@ -2068,55 +2131,11 @@ do
         Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
         -- Connect input handling
-        FlyInputConnection = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
-            if GameProcessed then return end
+        FlyInputBeganConnection, FlyInputEndedConnection = CreateMovementInputConnections(UpdateFlyMovement)
 
-            if Input.KeyCode == Enum.KeyCode.W then
-                MoveW = true
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.A then
-                MoveA = true
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.S then
-                MoveS = true
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.D then
-                MoveD = true
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.Q then
-                MoveQ = true
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.E then
-                MoveE = true
-                UpdateFlyMovement()
-            end
-        end)
-
-        local FlyInputEndConnection = UserInputService.InputEnded:Connect(function(Input, GameProcessed)
-            if Input.KeyCode == Enum.KeyCode.W then
-                MoveW = false
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.A then
-                MoveA = false
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.S then
-                MoveS = false
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.D then
-                MoveD = false
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.Q then
-                MoveQ = false
-                UpdateFlyMovement()
-            elseif Input.KeyCode == Enum.KeyCode.E then
-                MoveE = false
-                UpdateFlyMovement()
-            end
-        end)
-
-        -- Store both connections
-        C[#C + 1] = FlyInputConnection
-        C[#C + 1] = FlyInputEndConnection
+        -- Store connections
+        C[#C + 1] = FlyInputBeganConnection
+        C[#C + 1] = FlyInputEndedConnection
 
         -- Connect RenderStepped to continuously update movement and maintain Physics state
         FlyConnection = RenderStepped:Connect(function()
@@ -2193,6 +2212,266 @@ do
             Notify('Success', 'Unfly', 'Flying disabled')
         end
     })
+
+    -- Freecam
+    local Freecamming = false
+    local FreecamHead = nil
+    local FreecamBodyPosition = nil
+    local FreecamBodyGyro = nil
+    local FreecamConnection = nil
+    local FreecamInputBeganConnection = nil
+    local FreecamInputEndedConnection = nil
+    local FreecamDiedConnection = nil
+    local FreecamSubjectChangedConnection = nil
+    local CurrentFreecamTween = nil
+    local FreecamSpeed = 0
+    local FreecamTweenTime = 0.1
+    local OriginalCameraSubject = nil
+
+    local function UpdateFreecamMovement()
+        if not Freecamming then return end
+
+        if not FreecamHead or not FreecamHead.Parent then
+            return
+        end
+
+        local MoveDirection = CalculateMoveDirection()
+
+        -- Cancel existing tween if any
+        if CurrentFreecamTween then
+            CurrentFreecamTween:Cancel()
+        end
+
+        -- Calculate target position
+        local TargetPosition = FreecamHead.Position + (MoveDirection * FreecamSpeed)
+
+        -- Tween BodyPosition target to new position
+        if FreecamBodyPosition then
+            CurrentFreecamTween = Tween(FreecamBodyPosition, FreecamTweenTime, 'Linear', 'Out', false, {
+                Position = TargetPosition
+            })
+        end
+
+        -- Orient head to face camera direction
+        if FreecamBodyGyro then
+            FreecamBodyGyro.CFrame = workspace.CurrentCamera.CFrame
+        end
+    end
+
+    local function StopFreecam()
+        if not Freecamming then return end
+
+        Freecamming = false
+        ResetMovementStates()
+
+        -- Unanchor character to allow movement again
+        local Char, Root = GetLocalPlayerInfo()
+        if Root then
+            Root.Anchored = false
+        end
+
+        -- Disconnect connections
+        if FreecamConnection then
+            FreecamConnection:Disconnect()
+            FreecamConnection = nil
+        end
+
+        if FreecamInputBeganConnection then
+            FreecamInputBeganConnection:Disconnect()
+            FreecamInputBeganConnection = nil
+        end
+
+        if FreecamInputEndedConnection then
+            FreecamInputEndedConnection:Disconnect()
+            FreecamInputEndedConnection = nil
+        end
+
+        if FreecamDiedConnection then
+            FreecamDiedConnection:Disconnect()
+            FreecamDiedConnection = nil
+        end
+
+        if FreecamSubjectChangedConnection then
+            FreecamSubjectChangedConnection:Disconnect()
+            FreecamSubjectChangedConnection = nil
+        end
+
+        -- Cancel current tween
+        if CurrentFreecamTween then
+            CurrentFreecamTween:Cancel()
+            CurrentFreecamTween = nil
+        end
+
+        -- Destroy BodyPosition
+        if FreecamBodyPosition then
+            FreecamBodyPosition:Destroy()
+            FreecamBodyPosition = nil
+        end
+
+        -- Destroy BodyGyro
+        if FreecamBodyGyro then
+            FreecamBodyGyro:Destroy()
+            FreecamBodyGyro = nil
+        end
+
+        -- Destroy freecam head
+        if FreecamHead then
+            FreecamHead:Destroy()
+            FreecamHead = nil
+        end
+
+        -- Restore original camera subject
+        if OriginalCameraSubject and OriginalCameraSubject.Parent then
+            workspace.CurrentCamera.CameraSubject = OriginalCameraSubject
+        end
+
+        OriginalCameraSubject = nil
+    end
+
+    local function StartFreecam(Speed)
+        local Char, Root, Humanoid, Head = GetLocalPlayerInfo()
+        if not Char or not Head then
+            return false, 'Character or Head not found'
+        end
+
+        Freecamming = true
+        FreecamSpeed = Speed
+
+        -- Store original camera subject
+        OriginalCameraSubject = workspace.CurrentCamera.CameraSubject
+
+        -- Anchor character to prevent movement
+        if Root then
+            Root.Anchored = true
+        end
+
+        -- Create partially transparent copy of head
+        FreecamHead = Head:Clone()
+        FreecamHead.Name = 'FreecamHead'
+        FreecamHead.Position = Head.Position
+        FreecamHead.Transparency = 0.5
+        FreecamHead.CanCollide = false
+        FreecamHead.Anchored = false
+
+        -- Remove any welds or attachments that might interfere
+        local Children = FreecamHead:GetChildren()
+        for I = 1, #Children do
+            local Child = Children[I]
+            if Child:IsA('Weld') or Child:IsA('Motor6D') or Child:IsA('Attachment') then
+                Child:Destroy()
+            end
+        end
+
+        FreecamHead.Parent = workspace
+
+        -- Create BodyPosition to control movement
+        FreecamBodyPosition = Create('BodyPosition', {
+            Position = FreecamHead.Position,
+            MaxForce = Vector3.new(INF, INF, INF),
+            D = 1000,
+            P = 10000,
+            Parent = FreecamHead
+        })
+
+        -- Create BodyGyro to control rotation
+        FreecamBodyGyro = Create('BodyGyro', {
+            MaxTorque = Vector3.new(INF, INF, INF),
+            D = 300,
+            P = 5000,
+            Parent = FreecamHead
+        })
+
+        -- Set camera subject to freecam head
+        workspace.CurrentCamera.CameraSubject = FreecamHead
+
+        -- Connect input handling
+        FreecamInputBeganConnection, FreecamInputEndedConnection = CreateMovementInputConnections(UpdateFreecamMovement)
+
+        -- Store connections
+        C[#C + 1] = FreecamInputBeganConnection
+        C[#C + 1] = FreecamInputEndedConnection
+
+        -- Connect RenderStepped to continuously update movement
+        FreecamConnection = RenderStepped:Connect(function()
+            if not Freecamming then return end
+
+            if not FreecamHead or not FreecamHead.Parent then
+                return
+            end
+
+            -- Continuously update movement to respect camera angle changes
+            UpdateFreecamMovement()
+        end)
+
+        C[#C + 1] = FreecamConnection
+
+        -- Connect to Humanoid.Died event to disable freecam on death
+        if Humanoid then
+            FreecamDiedConnection = Humanoid.Died:Connect(function()
+                StopFreecam()
+                Notify('Info', 'Freecam', 'Freecam disabled due to death')
+            end)
+
+            C[#C + 1] = FreecamDiedConnection
+        end
+
+        -- Connect to CameraSubject changed event to cancel freecam
+        FreecamSubjectChangedConnection = workspace.CurrentCamera:GetPropertyChangedSignal('CameraSubject'):Connect(function()
+            if Freecamming and workspace.CurrentCamera.CameraSubject ~= FreecamHead then
+                StopFreecam()
+                Notify('Info', 'Freecam', 'Freecam disabled due to camera subject change')
+            end
+        end)
+
+        C[#C + 1] = FreecamSubjectChangedConnection
+
+        return true, nil
+    end
+
+    RegisterCommand({
+        Category = 'CAMERA',
+        Name = 'freecam',
+        Args = {{'number', 'speed', true, 30}},
+        Aliases = {'fc'},
+        Description = 'Enter freecam mode with a transparent head copy',
+        Execute = function(Speed)
+            if Freecamming then
+                if Speed ~= FreecamSpeed then
+                    FreecamSpeed = Speed
+                    Notify('Success', 'Freecam', 'Set freecam speed to ' .. Speed)
+                    return
+                end
+
+                Notify('Warning', 'Freecam', 'Already in freecam mode')
+                return
+            end
+
+            local Success, ErrorMsg = StartFreecam(Speed)
+            if not Success then
+                Notify('Error', 'Freecam', ErrorMsg)
+                return
+            end
+
+            Notify('Success', 'Freecam', ('Freecam enabled at speed %d. Use WASD to move, Q to descend, and E to ascend'):format(Speed))
+        end
+    })
+
+    RegisterCommand({
+        Category = 'CAMERA',
+        Name = 'unfreecam',
+        Args = {},
+        Aliases = {'unfc'},
+        Description = 'Exit freecam mode',
+        Execute = function()
+            if not Freecamming then
+                Notify('Warning', 'Unfreecam', 'Not currently in freecam mode')
+                return
+            end
+
+            StopFreecam()
+            Notify('Success', 'Unfreecam', 'Freecam disabled')
+        end
+    })
 end
 
 RegisterCommand({
@@ -2259,8 +2538,19 @@ RegisterCommand({
     Aliases = {},
     Description = 'Undoes any changes made to the camera',
     Execute = function()
+        -- Reset camera properties
         LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
         workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+
+        -- Reset camera subject to local player
+        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        if Char then
+            local CameraSubject = Humanoid or Head or Root or Part
+            if CameraSubject then
+                workspace.CurrentCamera.CameraSubject = CameraSubject
+            end
+        end
+
         Notify('Success', 'Fixcam', 'Camera reset to default')
     end
 })
