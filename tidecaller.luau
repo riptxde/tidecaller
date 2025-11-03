@@ -2048,7 +2048,10 @@ RegisterCommand({
             end
         end
 
-        Notify('Success', 'Teleport', ('Teleported to (%d, %d, %d)'):format(X, Y, Z))
+        local XStr = ('%f'):format(X):gsub('%.?0+$', '')
+        local YStr = ('%f'):format(Y):gsub('%.?0+$', '')
+        local ZStr = ('%f'):format(Z):gsub('%.?0+$', '')
+        Notify('Success', 'Teleport', ('Teleported to (%s, %s, %s)'):format(XStr, YStr, ZStr))
     end
 })
 
