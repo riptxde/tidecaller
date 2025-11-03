@@ -28,8 +28,14 @@ G.Tidecaller = { -- API functions and resources to be set later
 }
 
 --/ Services /--
-if not game.Loaded then
+if not game.IsLoaded then
 	game.Loaded:Wait()
+	wait()
+end
+
+-- Additional auto-execution safety check
+while not game:IsLoaded() do
+	wait()
 end
 
 local HttpService = game:GetService('HttpService')
