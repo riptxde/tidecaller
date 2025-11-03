@@ -1845,7 +1845,7 @@ RegisterCommand({
     Aliases = {},
     Description = 'Enter flight mode',
     Execute = function()
-        print('fly')
+        print('TODO: fly')
     end
 })
 
@@ -1856,7 +1856,7 @@ RegisterCommand({
     Aliases = {},
     Description = 'Exit flight mode',
     Execute = function()
-        print('unfly')
+        print('TODO: unfly')
     end
 })
 
@@ -2024,12 +2024,31 @@ RegisterCommand({
 
 RegisterCommand({
     Category = 'TELEPORT',
-    Name = 'tp',
+    Name = 'teleport',
     Args = {{'number', 'x'}, {'number', 'y'}, {'number', 'z'}},
-    Aliases = {},
+    Aliases = {'tp'},
     Description = 'Teleport to X Y Z coordinates',
     Execute = function(X, Y, Z)
-        print('tp', X, Y, Z, type(X), type(Y), type(Z))
+        local Char, Root = GetLocalPlayerInfo()
+        if not Root then
+            Notify('Error', 'Goto', 'Character or HumanoidRootPart not found')
+            return
+        end
+
+        local XRot, YRot, ZRot = Root.CFrame:ToEulerAnglesXYZ();
+        Root.CFrame = CFrame.new(X, Y, Z) * CFrame.fromEulerAnglesXYZ(XRot, YRot, ZRot)
+
+        -- Reset velocities
+        local Descendants = Char:GetDescendants()
+        for I = 1, #Descendants do
+            local BasePart = Descendants[I]
+            if BasePart:IsA('BasePart') then
+                BasePart.Velocity = Vector3.new(0, 0, 0)
+                BasePart.RotVelocity = Vector3.new(0, 0, 0)
+            end
+        end
+
+        Notify('Success', 'Teleport', ('Teleported to (%d, %d, %d)'):format(X, Y, Z))
     end
 })
 
@@ -2142,35 +2161,13 @@ RegisterCommand({
 })
 
 RegisterCommand({
-    Category = 'TESTING',
-    Name = 'brokencommand',
-    Args = {},
-    Aliases = {},
-    Description = 'Command that does not work and errors for testing',
-    Execute = function()
-        error('you ran the brokencommand command')
-    end
-})
-
-RegisterCommand({
-    Category = 'TESTING',
+    Category = 'MISC',
     Name = 'notify',
     Args = {{'string', 'title'}, {'string', 'message'}, {'number', 'duration', true}},
     Aliases = {},
-    Description = 'Command that does not work and errors for testing.',
+    Description = 'Sends a Tidecaller notification to the screen',
     Execute = function(Title, Message, Duration)
         Notify('Info', Title, Message, Duration)
-    end
-})
-
-RegisterCommand({
-    Category = 'TESTING',
-    Name = 'longdesc',
-    Args = {},
-    Aliases = {},
-    Description = 'This description is also going to be super long so we can check and see whether the command items autosize and wrap this text automatically. Hopefully it does!',
-    Execute = function()
-        print('longdesc')
     end
 })
 
