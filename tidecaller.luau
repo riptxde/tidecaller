@@ -2689,6 +2689,18 @@ RegisterCommand({
 })
 
 RegisterCommand({
+    Category = 'CAMERA',
+    Name = 'namedistance',
+    Args = {{'number', 'distance', true, 10000}},
+    Aliases = {'namedist', 'nd'},
+    Description = 'Allows you to see player nametags from a further distance - In a normal game, this is limited to 100',
+    Execute = function(Distance)
+        LP.NameDisplayDistance = Distance
+        Notify('Success', 'Name Distance', 'Name display distance set to ' .. Distance)
+    end
+})
+
+RegisterCommand({
     Category = 'TELEPORT',
     Name = 'goto',
     Args = {{'player', 'target'}},
