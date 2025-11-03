@@ -2445,17 +2445,17 @@ do
             FreecamBodyGyro = nil
         end
 
-        -- Destroy freecam head
-        if FreecamHead then
-            FreecamHead:Destroy()
-            FreecamHead = nil
-        end
-
-        -- Restore original camera subject only if current subject is the freecam head
+        -- Restore original camera subject
         if workspace.CurrentCamera.CameraSubject == FreecamHead then
             if OriginalCameraSubject and OriginalCameraSubject.Parent then
                 workspace.CurrentCamera.CameraSubject = OriginalCameraSubject
             end
+        end
+
+        -- Destroy freecam head
+        if FreecamHead then
+            FreecamHead:Destroy()
+            FreecamHead = nil
         end
 
         OriginalCameraSubject = nil
