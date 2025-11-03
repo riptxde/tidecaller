@@ -1651,13 +1651,15 @@ local function ExecuteCommand(Input)
 
             if AllArgsParsed then
                 -- Execute the command
-                local Success, ErrorMsg = pcall(function()
-                    MatchedCommand.Execute(unpack(ParsedArgs))
-                end)
+                spawn(function()
+                    local Success, ErrorMsg = pcall(function()
+                        MatchedCommand.Execute(unpack(ParsedArgs))
+                    end)
 
-                if not Success then
-                    Notify('Error', ('%s: Execution Error'):format(MatchedCommand.Name), tostring(ErrorMsg))
-                end
+                    if not Success then
+                        Notify('Error', ('%s: Execution Error'):format(MatchedCommand.Name), tostring(ErrorMsg))
+                    end
+                end)
             end
         end
     end
