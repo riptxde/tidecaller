@@ -2962,7 +2962,7 @@ RegisterCommand({
 
 --/ Main /--
 G.Tidecaller.Loaded = true
-wait(2.5)
-Notify('Success', 'Script Loaded', ('Welcome to Tidecaller. Press the %s button to open the command palette'):format(HOTKEY))
 wait(1)
-Notify('Info', 'Credits', 'Script developed by riptxde.')
+Notify('Success', 'Script Loaded', ('Welcome to Tidecaller. Press the %s button to open the command palette, and the UP/DOWN arrow keys to navigate the command list'):format(HOTKEY), 15)
+wait(1)
+Notify('Info', 'Credits', 'Script developed by riptxde')
