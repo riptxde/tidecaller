@@ -124,13 +124,15 @@ end
 
 -- Quote a value if it contains spaces or quotes
 local function QuoteIfNeeded(Value)
-    if Value:find(' ') or Value:find('"') or Value:find("'") then
+    if Value:find(' ') or Value:find('"') or Value:find("'") or Value:find('\\') then
         -- Prefer double quotes, but use single if value contains double quotes
         if Value:find('"') and not Value:find("'") then
-            return ("'%s'"):format(Value)
+            -- Escape backslashes for single quotes
+            local Escaped = Value:gsub('\\', '\\\\')
+            return ("'%s'"):format(Escaped)
         else
-            -- Escape any double quotes in the value
-            local Escaped = Value:gsub('"', '\\"')
+            -- Escape backslashes and double quotes in the value
+            local Escaped = Value:gsub('\\', '\\\\'):gsub('"', '\\"')
             return ('"%s"'):format(Escaped)
         end
     end
