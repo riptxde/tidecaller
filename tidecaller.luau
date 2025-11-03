@@ -2947,6 +2947,19 @@ RegisterCommand({
     end
 })
 
+RegisterCommand({
+    Category = 'MISC',
+    Name = 'quit',
+    Args = {},
+    Aliases = {},
+    Description = 'Destroys and cleans up Tidecaller completely',
+    Execute = function()
+        print('[Tidecaller] Quitting...')
+        Cleanup()
+        print('[Tidecaller] Quit and cleanup complete')
+    end
+})
+
 --/ Main /--
 G.Tidecaller.Loaded = true
 wait(2.5)
