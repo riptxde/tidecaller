@@ -2883,6 +2883,35 @@ RegisterCommand({
 })
 
 RegisterCommand({
+    Category = 'SERVER',
+    Name = 'copyjobid',
+    Args = {},
+    Aliases = {},
+    Description = 'Copy the current Job ID of the server',
+    Execute = function()
+        if type(setclipboard) == 'function' then
+            setclipboard(game.JobId)
+            Notify('Success', 'Copied', 'Job ID copied to clipboard')
+        else
+            Notify('Warning', 'Copy Failed', 'Your executor does not have access to the setclipboard. The server\'s Job ID is: ' .. game.JobId)
+        end
+    end
+})
+
+RegisterCommand({
+    Category = 'SERVER',
+    Name = 'joinjobid',
+    Args = {{'string', 'jobid'}},
+    Aliases = {},
+    Description = 'Join a server with a specific Job ID',
+    Execute = function(JobId)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, JobId, LP)
+        wait(0.6)
+        GuiService:ClearError()
+    end
+})
+
+RegisterCommand({
     Category = 'MISC',
     Name = 'notify',
     Args = {{'string', 'title'}, {'string', 'message'}, {'number', 'duration', true}},
