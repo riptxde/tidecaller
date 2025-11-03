@@ -215,7 +215,7 @@ local function GetTargetPlayerInfo(Player)
         return Player, nil, nil, nil, nil, nil
     end
 
-    local PRoot = PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso') or PChar:FindFirstChild('HumanoidRootPart')
+    local PRoot = PChar:FindFirstChild('HumanoidRootPart') or PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso')
     local PHumanoid = PChar:FindFirstChildOfClass('Humanoid')
     local PHead = PChar:FindFirstChild('Head')
     local PPart = PChar:FindFirstChildWhichIsA('BasePart')
