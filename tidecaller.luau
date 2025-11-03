@@ -1840,28 +1840,6 @@ RegisterArgType('player', {
 --/ Commands /--
 RegisterCommand({
     Category = 'CHARACTER',
-    Name = 'fly',
-    Args = {},
-    Aliases = {},
-    Description = 'Enter flight mode',
-    Execute = function()
-        print('TODO: fly')
-    end
-})
-
-RegisterCommand({
-    Category = 'CHARACTER',
-    Name = 'unfly',
-    Args = {},
-    Aliases = {},
-    Description = 'Exit flight mode',
-    Execute = function()
-        print('TODO: unfly')
-    end
-})
-
-RegisterCommand({
-    Category = 'CHARACTER',
     Name = 'walkspeed',
     Args = {{'number', 'amount', true, 16}},
     Aliases = {'speed', 'ws'},
@@ -1910,6 +1888,312 @@ RegisterCommand({
         Notify('Success', 'Hip Height', ('Set hip height to %d'):format(Amount))
     end
 })
+
+-- Fly/Unfly
+do
+    local Flying = false
+    local FlyBodyPosition = nil
+    local FlyBodyGyro = nil
+    local FlyConnection = nil
+    local FlyInputConnection = nil
+    local FlyDiedConnection = nil
+    local CurrentTween = nil
+
+    local FlySpeed = 0
+    local TweenTime = 0.1
+
+    local MoveW = false
+    local MoveA = false
+    local MoveS = false
+    local MoveD = false
+    local MoveQ = false
+    local MoveE = false
+
+    local function UpdateFlyMovement()
+        if not Flying then return end
+
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        if not Char or not Root or not Humanoid then
+            return
+        end
+
+        -- Calculate movement direction
+        local Camera = workspace.CurrentCamera
+        local CameraCFrame = Camera.CFrame
+
+        local MoveDirection = Vector3.new(0, 0, 0)
+
+        -- Forward/Backward (relative to camera, includes vertical component)
+        if MoveW then
+            MoveDirection = MoveDirection + CameraCFrame.LookVector
+        end
+        if MoveS then
+            MoveDirection = MoveDirection - CameraCFrame.LookVector
+        end
+
+        -- Left/Right (relative to camera)
+        if MoveA then
+            MoveDirection = MoveDirection - CameraCFrame.RightVector
+        end
+        if MoveD then
+            MoveDirection = MoveDirection + CameraCFrame.RightVector
+        end
+
+        -- Up/Down (absolute Y axis)
+        if MoveE then
+            MoveDirection = MoveDirection + Vector3.new(0, 1, 0)
+        end
+        if MoveQ then
+            MoveDirection = MoveDirection - Vector3.new(0, 1, 0)
+        end
+
+        -- Normalize the direction if we have movement
+        if MoveDirection.Magnitude > 0 then
+            MoveDirection = MoveDirection.Unit
+        end
+
+        -- Cancel existing tween if any
+        if CurrentTween then
+            CurrentTween:Cancel()
+        end
+
+        -- Calculate target position
+        local TargetPosition = Root.Position + (MoveDirection * FlySpeed)
+
+        -- Tween BodyPosition target to new position
+        if FlyBodyPosition then
+            CurrentTween = Tween(FlyBodyPosition, TweenTime, 'Linear', 'Out', false, {
+                Position = TargetPosition
+            })
+        end
+
+        -- Orient character to face camera direction (including vertical)
+        if FlyBodyGyro then
+            FlyBodyGyro.CFrame = CameraCFrame
+        end
+    end
+
+    local function StopFly()
+        if not Flying then return end
+
+        Flying = false
+
+        -- Reset movement states
+        MoveW = false
+        MoveA = false
+        MoveS = false
+        MoveD = false
+        MoveQ = false
+        MoveE = false
+
+        -- Disconnect connections
+        if FlyConnection then
+            FlyConnection:Disconnect()
+            FlyConnection = nil
+        end
+
+        if FlyInputConnection then
+            FlyInputConnection:Disconnect()
+            FlyInputConnection = nil
+        end
+
+        if FlyDiedConnection then
+            FlyDiedConnection:Disconnect()
+            FlyDiedConnection = nil
+        end
+
+        -- Cancel current tween
+        if CurrentTween then
+            CurrentTween:Cancel()
+            CurrentTween = nil
+        end
+
+        -- Destroy BodyPosition
+        if FlyBodyPosition then
+            FlyBodyPosition:Destroy()
+            FlyBodyPosition = nil
+        end
+
+        -- Destroy BodyGyro
+        if FlyBodyGyro then
+            FlyBodyGyro:Destroy()
+            FlyBodyGyro = nil
+        end
+
+        -- Reset velocity and humanoid state
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+
+        if Char then
+            local Descendants = Char:GetDescendants()
+            for I = 1, #Descendants do
+                local Descendant = Descendants[I]
+                if Descendant:IsA('BasePart') then
+                    Descendant.Velocity = Vector3.new(0, 0, 0)
+                end
+            end
+        end
+
+        if Humanoid then
+            Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+        end
+    end
+
+    local function StartFly(Speed)
+        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        if not Char or not Root or not Humanoid then
+            return false, 'Character or HumanoidRootPart not found'
+        end
+
+        Flying = true
+        FlySpeed = Speed
+
+        -- Create BodyPosition to control movement
+        FlyBodyPosition = Create('BodyPosition', {
+            Position = Root.Position,
+            MaxForce = Vector3.new(INF, INF, INF),
+            D = 1000,
+            P = 10000,
+            Parent = Root
+        })
+
+        -- Create BodyGyro to control rotation
+        FlyBodyGyro = Create('BodyGyro', {
+            MaxTorque = Vector3.new(INF, INF, INF),
+            D = 300,
+            P = 5000,
+            Parent = Root
+        })
+
+        -- Set humanoid state to Physics
+        Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+
+        -- Connect input handling
+        FlyInputConnection = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
+            if GameProcessed then return end
+
+            if Input.KeyCode == Enum.KeyCode.W then
+                MoveW = true
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.A then
+                MoveA = true
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.S then
+                MoveS = true
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.D then
+                MoveD = true
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.Q then
+                MoveQ = true
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.E then
+                MoveE = true
+                UpdateFlyMovement()
+            end
+        end)
+
+        local FlyInputEndConnection = UserInputService.InputEnded:Connect(function(Input, GameProcessed)
+            if Input.KeyCode == Enum.KeyCode.W then
+                MoveW = false
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.A then
+                MoveA = false
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.S then
+                MoveS = false
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.D then
+                MoveD = false
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.Q then
+                MoveQ = false
+                UpdateFlyMovement()
+            elseif Input.KeyCode == Enum.KeyCode.E then
+                MoveE = false
+                UpdateFlyMovement()
+            end
+        end)
+
+        -- Store both connections
+        C[#C + 1] = FlyInputConnection
+        C[#C + 1] = FlyInputEndConnection
+
+        -- Connect RenderStepped to continuously update movement and maintain Physics state
+        FlyConnection = RenderStepped:Connect(function()
+            if not Flying then return end
+
+            local Char, Root, Humanoid = GetLocalPlayerInfo()
+            if not Char or not Root or not Humanoid then
+                return
+            end
+
+            -- Keep humanoid in Physics state
+            if Humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
+                Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+            end
+
+            -- Continuously update movement to respect camera angle changes
+            UpdateFlyMovement()
+        end)
+
+        C[#C + 1] = FlyConnection
+
+        -- Connect to Humanoid.Died event to disable flying on death
+        FlyDiedConnection = Humanoid.Died:Connect(function()
+            StopFly()
+            Notify('Info', 'Fly', 'Flying disabled due to death')
+        end)
+
+        C[#C + 1] = FlyDiedConnection
+
+        return true, nil
+    end
+
+    RegisterCommand({
+        Category = 'CHARACTER',
+        Name = 'fly',
+        Args = {{'number', 'speed', true, 30}},
+        Aliases = {},
+        Description = 'Enter flight mode',
+        Execute = function(Speed)
+            if Flying then
+                if Speed ~= FlySpeed then
+                    FlySpeed = Speed
+                    Notify('Success', 'Fly', 'Set fly speed to ' .. Speed)
+                    return
+                end
+
+                Notify('Warning', 'Fly', 'Already flying')
+                return
+            end
+
+            local Success, ErrorMsg = StartFly(Speed)
+            if not Success then
+                Notify('Error', 'Fly', ErrorMsg)
+                return
+            end
+
+            Notify('Success', 'Fly', ('Flying enabled at speed %d. Use WASD to move, Q to descend, and E to ascend'):format(Speed))
+        end
+    })
+
+    RegisterCommand({
+        Category = 'CHARACTER',
+        Name = 'unfly',
+        Args = {},
+        Aliases = {},
+        Description = 'Exit flight mode',
+        Execute = function()
+            if not Flying then
+                Notify('Warning', 'Unfly', 'Not currently flying')
+                return
+            end
+
+            StopFly()
+            Notify('Success', 'Unfly', 'Flying disabled')
+        end
+    })
+end
 
 RegisterCommand({
     Category = 'CAMERA',
