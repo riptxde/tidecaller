@@ -2831,24 +2831,13 @@ RegisterCommand({
 RegisterCommand({
     Category = 'WORLD',
     Name = 'gravity',
-    Args = {{'number', 'amount'}},
+    Args = {{'number', 'amount', true, 196.2}},
     Aliases = {'grav'},
     Description = 'Set the client\'s gravity',
     Execute = function(Amount)
         workspace.Gravity = Amount
-        Notify('Success', 'Gravity', ('Set gravity to %d'):format(Amount))
-    end
-})
-
-RegisterCommand({
-    Category = 'WORLD',
-    Name = 'resetgravity',
-    Args = {},
-    Aliases = {'fixgrav', 'fixgravity'},
-    Description = 'Reset the client\'s gravity to default',
-    Execute = function()
-        workspace.Gravity = 196.2
-        Notify('Success', 'Reset Gravity', 'Gravity reset to 196.2')
+        local AmountStr = ('%f'):format(Amount):gsub('%.?0+$', '')
+        Notify('Success', 'Gravity', ('Set gravity to %s'):format(AmountStr))
     end
 })
 
