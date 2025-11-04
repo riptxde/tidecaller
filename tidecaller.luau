@@ -37,6 +37,7 @@ end
 while not game:IsLoaded() do
 	wait()
 end
+wait(.1)
 
 local HttpService = game:GetService('HttpService')
 local RunService = game:GetService('RunService')
