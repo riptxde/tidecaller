@@ -53,9 +53,9 @@ local Lighting = game:GetService('Lighting')
 
 --/ Objects /--
 local LP = Players.LocalPlayer
-local Stepped = RunService.Stepped
-local RenderStepped = RunService.RenderStepped
-local Heartbeat = RunService.Heartbeat
+local PreSimulation = RunService.PreSimulation
+local PreRender = RunService.PreRender
+local PostSimulation = RunService.PostSimulation
 local Rand = Random.new()
 
 while not LP do
@@ -1249,7 +1249,7 @@ local function OpenPalette()
     CommandPalette.Visible = true
     Tween(CommandPalette, 0.3, 'Quart', 'Out', false, {Position = UDim2.new(0.5, 0, 0.15, 0)})
 
-    Heartbeat:Wait()
+    PostSimulation:Wait()
 
     InputBox:CaptureFocus()
 end
@@ -1262,7 +1262,7 @@ local function ClosePalette()
         InputBox:ReleaseFocus()
     end
 
-    Heartbeat:Wait()
+    PostSimulation:Wait()
 
     ActiveCloseTween = Tween(CommandPalette, 0.3, 'Quart', 'In', false, {Position = UDim2.new(0.5, 0, -0.5, 0)})
 
@@ -1474,7 +1474,7 @@ local NextIndex = 2
 local TransitionTime = 0.5
 local Elapsed = 0
 
-C[#C + 1] = RenderStepped:Connect(function(DeltaTime)
+C[#C + 1] = PreRender:Connect(function(DeltaTime)
     Elapsed = Elapsed + DeltaTime
 
     if Elapsed >= TransitionTime then
@@ -2011,7 +2011,7 @@ do
 
         Noclipping = true
 
-        NoclipConnection = Stepped:Connect(function()
+        NoclipConnection = PreSimulation:Connect(function()
             if not Noclipping then return end
 
             local Char = GetLocalPlayerInfo()
@@ -2322,8 +2322,8 @@ do
         C[#C + 1] = FlyInputBeganConnection
         C[#C + 1] = FlyInputEndedConnection
 
-        -- Connect RenderStepped to continuously update movement and maintain Physics state
-        FlyConnection = RenderStepped:Connect(function()
+        -- Connect PreRender to continuously update movement and maintain Physics state
+        FlyConnection = PreRender:Connect(function()
             if not Flying then return end
 
             local Char, Root, Humanoid = GetLocalPlayerInfo()
@@ -2578,8 +2578,8 @@ do
         C[#C + 1] = FreecamInputBeganConnection
         C[#C + 1] = FreecamInputEndedConnection
 
-        -- Connect RenderStepped to continuously update movement
-        FreecamConnection = RenderStepped:Connect(function()
+        -- Connect PreRender to continuously update movement
+        FreecamConnection = PreRender:Connect(function()
             if not Freecamming then return end
 
             if not FreecamHead or not FreecamHead.Parent then
