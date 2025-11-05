@@ -414,7 +414,8 @@ local function CreateBasePaletteItem(Order)
         BackgroundColor3 = Colors.Base,
         BorderSizePixel = 0,
         LayoutOrder = Order,
-        AutomaticSize = Enum.AutomaticSize.Y
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Active = true
     })
 
     Create('UICorner', {
@@ -961,6 +962,7 @@ local IsNavigating = false
 local IsArgMode = false
 local CurrentCommand = nil
 local CurrentArgType = nil
+local ClickingPaletteItem = false
 
 -- Delayed repeat state
 local RepeatDelay = 0.5  -- Initial delay before repeat starts
@@ -1570,6 +1572,43 @@ C[#C + 1] = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
                 RepeatActive = false
             end
         end
+    elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        -- Handle clicking on command items when palette is open
+        if PaletteOpen then
+            local MousePosition = UserInputService:GetMouseLocation()
+            local GuiInset = GuiService:GetGuiInset()
+
+            -- Adjust mouse position for GuiInset
+            local AdjustedMouseX = MousePosition.X - GuiInset.X
+            local AdjustedMouseY = MousePosition.Y - GuiInset.Y
+
+            -- Find which visible command was clicked
+            for I = 1, #VisibleCommands do
+                local Item = VisibleCommands[I]
+                local AbsPos = Item.AbsolutePosition
+                local AbsSize = Item.AbsoluteSize
+
+                -- Check if mouse is within the bounds of this item
+                if AdjustedMouseX >= AbsPos.X and AdjustedMouseX <= AbsPos.X + AbsSize.X and
+                   AdjustedMouseY >= AbsPos.Y and AdjustedMouseY <= AbsPos.Y + AbsSize.Y then
+                    -- Set flag to prevent palette from closing
+                    ClickingPaletteItem = true
+
+                    -- Found the clicked item - highlight it
+                    HighlightPaletteItem(I)
+
+                    -- Refocus the input box and move cursor to end
+                    if not InputBox:IsFocused() then
+                        InputBox:CaptureFocus()
+                    end
+
+                    InputBox.CursorPosition = #InputBox.Text + 1
+
+                    ClickingPaletteItem = false
+                    break
+                end
+            end
+        end
     end
 end)
 
@@ -1691,7 +1730,27 @@ C[#C + 1] = InputBox.FocusLost:Connect(function(EnterPressed)
         ClosePalette()
     else
         -- Unfocused without pressing enter
-        ClosePalette()
+        -- Check if we're clicking on the CommandPalette area
+        local MousePosition = UserInputService:GetMouseLocation()
+        local GuiInset = GuiService:GetGuiInset()
+        local AdjustedMouseX = MousePosition.X - GuiInset.X
+        local AdjustedMouseY = MousePosition.Y - GuiInset.Y
+
+        local PaletteAbsPos = CommandPalette.AbsolutePosition
+        local PaletteAbsSize = CommandPalette.AbsoluteSize
+
+        local ClickingOnPalette = AdjustedMouseX >= PaletteAbsPos.X and AdjustedMouseX <= PaletteAbsPos.X + PaletteAbsSize.X and
+                                  AdjustedMouseY >= PaletteAbsPos.Y and AdjustedMouseY <= PaletteAbsPos.Y + PaletteAbsSize.Y
+
+        -- Only close if clicking outside the palette
+        if not ClickingOnPalette then
+            ClosePalette()
+        else
+            -- We're clicking on the palette, so refocus
+            if not InputBox:IsFocused() then
+                InputBox:CaptureFocus()
+            end
+        end
     end
 end)
 
