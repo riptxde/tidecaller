@@ -944,8 +944,8 @@ RebuildCommandList = function()
     end
 
     -- Update visible commands list
-    if UpdateVisibleCommands then
-        UpdateVisibleCommands()
+    if UpdateVisiblePaletteItems then
+        UpdateVisiblePaletteItems()
     end
 end
 
@@ -956,7 +956,7 @@ local ActiveNotifications = {}
 local NotificationGap = 10
 local ActiveCloseTween = nil
 local SelectedCommandIndex = 0
-local VisibleCommands = {}
+local VisiblePaletteItems = {}
 local CurrentlyHighlighted = nil
 local IsNavigating = false
 local IsArgMode = false
@@ -1087,14 +1087,14 @@ end
 G.Tidecaller.Notify = Notify
 
 --/ Command Palette Functions /--
-local function UpdateVisibleCommands()
-    VisibleCommands = {}
+local function UpdateVisiblePaletteItems()
+    VisiblePaletteItems = {}
     local Children = CommandsList:GetChildren()
 
     for I = 1, #Children do
         local Child = Children[I]
         if Child:IsA('Frame') and Child.Name:match('PaletteItem$') and Child.Visible then
-            VisibleCommands[#VisibleCommands + 1] = Child
+            VisiblePaletteItems[#VisiblePaletteItems + 1] = Child
         end
     end
 end
@@ -1136,7 +1136,7 @@ local function ShowArgSuggestions(ArgType, Query, PreviousArgs)
         end
     end
 
-    UpdateVisibleCommands()
+    UpdateVisiblePaletteItems()
     SelectedCommandIndex = 0
     if CurrentlyHighlighted then
         Tween(CurrentlyHighlighted, 0.15, 'Quad', 'Out', false, {
@@ -1156,14 +1156,14 @@ local function HighlightPaletteItem(Index)
     end
 
     -- Reset if index is 0 or out of bounds
-    if Index <= 0 or Index > #VisibleCommands then
+    if Index <= 0 or Index > #VisiblePaletteItems then
         CurrentlyHighlighted = nil
         SelectedCommandIndex = 0
         return
     end
 
     -- Highlight new item
-    local Item = VisibleCommands[Index]
+    local Item = VisiblePaletteItems[Index]
     if Item then
         CurrentlyHighlighted = Item
         SelectedCommandIndex = Index
@@ -1232,11 +1232,11 @@ end
 
 -- Navigate Up
 local function NavigateUp()
-    if #VisibleCommands == 0 then return end
+    if #VisiblePaletteItems == 0 then return end
 
     local NewIndex = SelectedCommandIndex - 1
     if NewIndex < 1 then
-        NewIndex = #VisibleCommands
+        NewIndex = #VisiblePaletteItems
     end
 
     HighlightPaletteItem(NewIndex)
@@ -1244,10 +1244,10 @@ end
 
 -- Navigate Down
 local function NavigateDown()
-    if #VisibleCommands == 0 then return end
+    if #VisiblePaletteItems == 0 then return end
 
     local NewIndex = SelectedCommandIndex + 1
-    if NewIndex > #VisibleCommands then
+    if NewIndex > #VisiblePaletteItems then
         NewIndex = 1
     end
 
@@ -1264,7 +1264,7 @@ local function OpenPalette()
         ActiveCloseTween = nil
     end
 
-    UpdateVisibleCommands()
+    UpdateVisiblePaletteItems()
 
     CommandPalette.Visible = true
     Tween(CommandPalette, 0.3, 'Quart', 'Out', false, {Position = UDim2.new(0.5, 0, 0.15, 0)})
@@ -1421,7 +1421,7 @@ local function FilterCommands(Query)
 
         if Child:IsA('Frame') and Child.Name == 'CategoryHeader' then
             -- Look ahead to see if any commands after this header are visible
-            local HasVisibleCommands = false
+            local HasVisiblePaletteItems = false
 
             for J = I + 1, #Children do
                 local NextChild = Children[J]
@@ -1433,17 +1433,17 @@ local function FilterCommands(Query)
 
                 -- Check if this command item is visible
                 if NextChild:IsA('Frame') and NextChild.Name == 'CommandPaletteItem' and NextChild.Visible then
-                    HasVisibleCommands = true
+                    HasVisiblePaletteItems = true
                     break
                 end
             end
 
-            Child.Visible = HasVisibleCommands
+            Child.Visible = HasVisiblePaletteItems
         end
     end
 
     -- Update visible commands list and reset selection
-    UpdateVisibleCommands()
+    UpdateVisiblePaletteItems()
     SelectedCommandIndex = 0
     if CurrentlyHighlighted then
         Tween(CurrentlyHighlighted, 0.15, 'Quad', 'Out', false, {
@@ -1583,8 +1583,8 @@ C[#C + 1] = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
             local AdjustedMouseY = MousePosition.Y - GuiInset.Y
 
             -- Find which visible command was clicked
-            for I = 1, #VisibleCommands do
-                local Item = VisibleCommands[I]
+            for I = 1, #VisiblePaletteItems do
+                local Item = VisiblePaletteItems[I]
                 local AbsPos = Item.AbsolutePosition
                 local AbsSize = Item.AbsoluteSize
 
