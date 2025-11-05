@@ -2074,6 +2074,35 @@ do
     })
 end
 
+RegisterCommand({
+    Category = 'CHARACTER',
+    Name = 'copypos',
+    Args = {{'boolean', 'commas', true, false}},
+    Aliases = {'cpos'},
+    Description = 'Copy your current position',
+    Execute = function(UseCommas)
+        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+
+        if not Root and not Part then
+            Notify('Error', 'Copy Failed', 'Your character currently does not have a position')
+            return
+        end
+
+        local XStr = ('%.2f'):format(Root.Position.X):gsub('%.?0+$', '')
+        local YStr = ('%.2f'):format(Root.Position.Y):gsub('%.?0+$', '')
+        local ZStr = ('%.2f'):format(Root.Position.Z):gsub('%.?0+$', '')
+
+        local PosStr = (UseCommas and ('%s, %s, %s') or ('%s %s %s')):format(XStr, YStr, ZStr)
+
+        if type(setclipboard) == 'function' then
+            setclipboard(PosStr)
+            Notify('Success', 'Copied', 'Position copied to clipboard')
+        else
+            Notify('Warning', 'Copy Failed', 'Your executor does not have access to the setclipboard. Your character\'s position is: ' .. PosStr)
+        end
+    end
+})
+
 -- Shared movement system for Fly and Freecam
 do
     -- Movement state
