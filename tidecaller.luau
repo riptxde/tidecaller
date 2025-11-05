@@ -906,22 +906,40 @@ RebuildCommandList = function()
         end
     end
 
-    -- Build command list from Commands array
-    local LastCategory = nil
-    local LayoutOrder = 0
+    -- Group commands by category (normalize to uppercase, preserve insertion order)
+    local CommandsByCategory = {}
+    local CategoryOrder = {} -- Track order of first appearance
 
     for I = 1, #Commands do
         local CommandData = Commands[I]
+        local Category = CommandData.Category:upper()
 
-        if CommandData.Category ~= LastCategory then
-            LastCategory = CommandData.Category
-            LayoutOrder = LayoutOrder + 1
-            CreateCategoryHeader(CommandData.Category, LayoutOrder)
+        if not CommandsByCategory[Category] then
+            CommandsByCategory[Category] = {}
+            CategoryOrder[#CategoryOrder + 1] = Category
         end
 
+        CommandsByCategory[Category][#CommandsByCategory[Category] + 1] = CommandData
+    end
+
+    -- Build command list with categories in insertion order
+    local LayoutOrder = 0
+
+    for I = 1, #CategoryOrder do
+        local Category = CategoryOrder[I]
+        local CategoryCommands = CommandsByCategory[Category]
+
+        -- Create category header
         LayoutOrder = LayoutOrder + 1
-        local PaletteItem = CreateCommandPaletteItem(CommandData, LayoutOrder)
-        PaletteItem.Parent = CommandsList
+        CreateCategoryHeader(Category, LayoutOrder)
+
+        -- Add all commands in this category
+        for J = 1, #CategoryCommands do
+            local CommandData = CategoryCommands[J]
+            LayoutOrder = LayoutOrder + 1
+            local PaletteItem = CreateCommandPaletteItem(CommandData, LayoutOrder)
+            PaletteItem.Parent = CommandsList
+        end
     end
 
     -- Update visible commands list
