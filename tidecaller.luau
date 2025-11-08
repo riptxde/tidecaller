@@ -2051,105 +2051,72 @@ RegisterCommand({
 })
 
 -- Noclip
-do
-    local Noclipping = false
-    local NoclipConnection = nil
+local Noclipping = false
 
-    local function StopNoclip()
-        if not Noclipping then return end
-
-        Noclipping = false
-
-        if NoclipConnection then
-            NoclipConnection:Disconnect()
-            NoclipConnection = nil
+RegisterCommand({
+    Category = 'CHARACTER',
+    Name = 'noclip',
+    Args = {},
+    Aliases = {},
+    Description = 'Walk through walls',
+    Execute = function()
+        if Noclipping then
+            Notify('Warning', 'Noclip', 'Already noclipping')
+            return
         end
 
-        -- Re-enable collision on all baseparts
-        local Char = GetLocalPlayerInfo()
-        if Char then
-            local Descendants = Char:GetDescendants()
-            for I = 1, #Descendants do
-                local Descendant = Descendants[I]
-                if Descendant:IsA('BasePart') then
-                    Descendant.CanCollide = true
-                end
-            end
-        end
-    end
-
-    local function StartNoclip()
-        if Noclipping then return end
-
-        local Char = GetLocalPlayerInfo()
-        if not Char then
-            return false, 'Character not found'
+        local Char, _, Humanoid = GetLocalPlayerInfo()
+        if not Humanoid then
+            Notify('Error', 'Noclip', 'Character or Humanoid not found')
+            return
         end
 
         Noclipping = true
 
-        NoclipConnection = PreSimulation:Connect(function()
-            if not Noclipping then return end
+        sethiddenproperty(Humanoid, 'OverrideDefaultCollisions', true)
 
-            local Char = GetLocalPlayerInfo()
-            if not Char then
-                StopNoclip()
-                return
+        local Descendants = Char:GetDescendants()
+        for I = 1, #Descendants do
+            local Descendant = Descendants[I]
+            if Descendant:IsA('BasePart') and not Descendant.Parent:IsA('Accoutrement') then
+                Descendant.CanCollide = false
             end
+        end
+
+        Notify('Success', 'Noclip', 'Noclip enabled')
+    end
+})
+
+RegisterCommand({
+    Category = 'CHARACTER',
+    Name = 'clip',
+    Args = {},
+    Aliases = {},
+    Description = 'Disable noclip',
+    Execute = function()
+        if not Noclipping then
+            Notify('Warning', 'Clip', 'Not currently noclipping')
+            return
+        end
+
+        Noclipping = false
+
+        local Char, _, Humanoid = GetLocalPlayerInfo()
+        if Humanoid then
+            sethiddenproperty(Humanoid, 'OverrideDefaultCollisions', false)
 
             local Descendants = Char:GetDescendants()
             for I = 1, #Descendants do
                 local Descendant = Descendants[I]
-                if Descendant:IsA('BasePart') then
-                    Descendant.CanCollide = false
+                if Descendant:IsA('BasePart') and not Descendant.Parent:IsA('Accoutrement') then
+                    Descendant.CanCollide = true
                 end
             end
-        end)
+        end
 
-        C[#C + 1] = NoclipConnection
-
-        return true, nil
+        Notify('Success', 'Clip', 'Noclip disabled')
     end
-
-    RegisterCommand({
-        Category = 'CHARACTER',
-        Name = 'noclip',
-        Args = {},
-        Aliases = {},
-        Description = 'Walk through walls',
-        Execute = function()
-            if Noclipping then
-                Notify('Warning', 'Noclip', 'Already noclipping')
-                return
-            end
-
-            local Success, ErrorMsg = StartNoclip()
-            if not Success then
-                Notify('Error', 'Noclip', ErrorMsg)
-                return
-            end
-
-            Notify('Success', 'Noclip', 'Noclip enabled')
-        end
-    })
-
-    RegisterCommand({
-        Category = 'CHARACTER',
-        Name = 'clip',
-        Args = {},
-        Aliases = {},
-        Description = 'Disable noclip',
-        Execute = function()
-            if not Noclipping then
-                Notify('Warning', 'Clip', 'Not currently noclipping')
-                return
-            end
-
-            StopNoclip()
-            Notify('Success', 'Clip', 'Noclip disabled')
-        end
-    })
-end
+})
 
 RegisterCommand({
     Category = 'CHARACTER',
