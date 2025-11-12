@@ -25,8 +25,19 @@ local function Create(ClassName, Properties)
     Properties = Properties or {}
 
     local Obj = Instance.new(ClassName)
+    local HasParent = false
+
     for Property, Value in next, Properties do
-        Obj[Property] = Value
+        if Property == 'Parent' then
+            HasParent = true
+            continue
+        else
+            Obj[Property] = Value
+        end
+    end
+
+    if HasParent then
+        Obj.Parent = Properties.Parent
     end
 
     return Obj
