@@ -1,6 +1,3 @@
---/ Config /--
-local PREFIX, HOTKEY = "'", 'Quote'
-
 --/ Globals /--
 local INF = 1 / 0
 local wait, spawn, delay = task.wait, task.spawn, task.delay
@@ -29,13 +26,13 @@ G.Tidecaller = { -- API functions and resources to be set later
 
 --/ Services /--
 if not game.IsLoaded then
-	game.Loaded:Wait()
-	wait()
+    game.Loaded:Wait()
+    wait()
 end
 
 -- Additional auto-execution safety check
 while not game:IsLoaded() do
-	wait()
+    wait()
 end
 wait(.1)
 
@@ -64,89 +61,6 @@ while not LP do
 end
 
 --/ Generic Helper Functions /--
-
--- Parse command input with support for quoted arguments
-local function ParseCommandInput(Input)
-    -- Returns: CompletedParts, CurrentArgIndex, CurrentArgText, InQuote
-    -- CompletedParts: Table of fully parsed arguments (doesn't include CurrentArgText)
-    -- CurrentArgIndex: The index of the argument being typed (0 means typing command name)
-    -- CurrentArgText: The text of the current argument being typed
-    -- InQuote: Whether we're currently inside an unclosed quote
-
-    local CompletedParts = {}
-    local CurrentPart = ''
-    local InQuote = false
-    local QuoteChar = nil
-    local IsEscaped = false
-
-    for I = 1, #Input do
-        local Char = Input:sub(I, I)
-
-        if IsEscaped then
-            -- Previous character was backslash - add this character literally
-            CurrentPart = CurrentPart .. Char
-            IsEscaped = false
-        elseif Char == '\\' then
-            -- Escape next character
-            IsEscaped = true
-        elseif not InQuote and (Char == '"' or Char == "'") then
-            -- Start a quoted section
-            InQuote = true
-            QuoteChar = Char
-        elseif InQuote and Char == QuoteChar then
-            -- End the quoted section
-            InQuote = false
-            QuoteChar = nil
-        elseif not InQuote and Char == ' ' then
-            -- Space outside quotes - finish current part
-            if #CurrentPart > 0 then
-                CompletedParts[#CompletedParts + 1] = CurrentPart
-                CurrentPart = ''
-            end
-        else
-            -- Regular character - add to current part
-            CurrentPart = CurrentPart .. Char
-        end
-    end
-
-    -- Determine current state
-    local EndsWithSpace = #Input > 0 and Input:sub(#Input, #Input) == ' ' and not InQuote
-    local CurrentArgIndex
-    local CurrentArgText
-
-    if EndsWithSpace then
-        -- Just finished typing an argument - save it and start new one
-        if #CurrentPart > 0 then
-            CompletedParts[#CompletedParts + 1] = CurrentPart
-        end
-        CurrentArgIndex = #CompletedParts
-        CurrentArgText = ''
-    else
-        -- Still typing current argument
-        CurrentArgIndex = #CompletedParts
-        CurrentArgText = CurrentPart
-    end
-
-    return CompletedParts, CurrentArgIndex, CurrentArgText, InQuote
-end
-
--- Quote a value if it contains spaces or quotes
-local function QuoteIfNeeded(Value)
-    if Value:find(' ') or Value:find('"') or Value:find("'") or Value:find('\\') then
-        -- Prefer double quotes, but use single if value contains double quotes
-        if Value:find('"') and not Value:find("'") then
-            -- Escape backslashes for single quotes
-            local Escaped = Value:gsub('\\', '\\\\')
-            return ("'%s'"):format(Escaped)
-        else
-            -- Escape backslashes and double quotes in the value
-            local Escaped = Value:gsub('\\', '\\\\'):gsub('"', '\\"')
-            return ('"%s"'):format(Escaped)
-        end
-    end
-    return Value
-end
-
 local function Create(ClassName, Properties)
     Properties = Properties or {}
 
@@ -168,75 +82,6 @@ local function Create(ClassName, Properties)
 
     return Obj
 end
-
-local function FindPlayerByName(Name)
-    local SearchUsername = false
-    local SearchName = Name
-
-    -- Check if searching for username specifically
-    if SearchName:sub(1, 1) == '@' then
-        SearchUsername = true
-        SearchName = SearchName:sub(2) -- Remove the @ prefix
-    end
-
-    SearchName = SearchName:lower()
-
-    -- Try display name first (if not forced username search)
-    if not SearchUsername then
-        for I = 1, #Players:GetPlayers() do
-            local Player = Players:GetPlayers()[I]
-            if Player.DisplayName:lower():sub(1, #SearchName) == SearchName then
-                return Player
-            end
-        end
-    end
-
-    -- Try username
-    for I = 1, #Players:GetPlayers() do
-        local Player = Players:GetPlayers()[I]
-        if Player.Name:lower():sub(1, #SearchName) == SearchName then
-            return Player
-        end
-    end
-
-    return nil
-end
-
-local function GetLocalPlayerInfo()
-    local Char = LP.Character
-    if not Char then
-        return nil, nil, nil, nil, nil
-    end
-
-    local Root = Char:FindFirstChild('HumanoidRootPart') or Char:FindFirstChild('Torso') or Char:FindFirstChild('UpperTorso')
-    local Humanoid = Char:FindFirstChildOfClass('Humanoid')
-    local Head = Char:FindFirstChild('Head')
-    local Part = Char:FindFirstChildWhichIsA('BasePart')
-
-    return Char, Root, Humanoid, Head, Part
-end
-
-local function GetTargetPlayerInfo(Player)
-    if not Player then
-        return nil, nil, nil, nil, nil, nil
-    end
-
-    local PChar = Player.Character
-    if not PChar then
-        return Player, nil, nil, nil, nil, nil
-    end
-
-    local PRoot = PChar:FindFirstChild('HumanoidRootPart') or PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso')
-    local PHumanoid = PChar:FindFirstChildOfClass('Humanoid')
-    local PHead = PChar:FindFirstChild('Head')
-    local PPart = PChar:FindFirstChildWhichIsA('BasePart')
-
-    return Player, PChar, PRoot, PHumanoid, PHead, PPart
-end
-
--- Expose player info functions
-G.Tidecaller.GetLocalPlayerInfo = GetLocalPlayerInfo
-G.Tidecaller.GetTargetPlayerInfo = GetTargetPlayerInfo
 
 local function CreateAsset(Definition)
     -- Definition structure: {ClassName, Properties, Children}
@@ -314,60 +159,305 @@ local function Tween(Obj, Time, Style, Direction, Reverses, Properties)
     return T
 end
 
---/ UI Settings /--
-local Colors = {
-    Base = Color3.fromRGB(30, 30, 46),         -- #1e1e2e
-    Mantle = Color3.fromRGB(24, 24, 37),       -- #181825
-    Crust = Color3.fromRGB(17, 17, 27),        -- #11111b
-    Surface0 = Color3.fromRGB(49, 50, 68),     -- #313244
-    Surface1 = Color3.fromRGB(69, 71, 90),     -- #45475a
-    Surface2 = Color3.fromRGB(88, 91, 112),    -- #585b70
-    Overlay0 = Color3.fromRGB(108, 112, 134),  -- #6c7086
-    Overlay1 = Color3.fromRGB(127, 132, 156),  -- #7f849c
-    Overlay2 = Color3.fromRGB(147, 153, 178),  -- #9399b2
-    Text = Color3.fromRGB(205, 214, 244),      -- #cdd6f4
-    Subtext1 = Color3.fromRGB(186, 194, 222),  -- #bac2de
-    Subtext0 = Color3.fromRGB(166, 173, 200),  -- #a6adc8
-    Blue = Color3.fromRGB(137, 180, 250),      -- #89b4fa
-    Lavender = Color3.fromRGB(180, 190, 254),  -- #b4befe
-    Sapphire = Color3.fromRGB(116, 199, 236),  -- #74c7ec
-    Sky = Color3.fromRGB(137, 220, 235),       -- #89dceb
-    Teal = Color3.fromRGB(148, 226, 213),      -- #94e2d5
-    Green = Color3.fromRGB(166, 227, 161),     -- #a6e3a1
-    Yellow = Color3.fromRGB(249, 226, 175),    -- #f9e2af
-    Peach = Color3.fromRGB(250, 179, 135),     -- #fab387
-    Maroon = Color3.fromRGB(235, 160, 172),    -- #eba0ac
-    Red = Color3.fromRGB(243, 139, 168),       -- #f38ba8
-    Mauve = Color3.fromRGB(203, 166, 247),     -- #cba6f7
-    Pink = Color3.fromRGB(245, 194, 231),      -- #f5c2e7
-    Flamingo = Color3.fromRGB(242, 205, 205),  -- #f2cdcd
-    Rosewater = Color3.fromRGB(245, 224, 220), -- #f5e0dc
-}
+-- Quote a value if it contains spaces or quotes
+local function QuoteIfNeeded(Value)
+    if Value:find(' ') or Value:find('"') or Value:find("'") or Value:find('\\') then
+        -- Prefer double quotes, but use single if value contains double quotes
+        if Value:find('"') and not Value:find("'") then
+            -- Escape backslashes for single quotes
+            local Escaped = Value:gsub('\\', '\\\\')
+            return ("'%s'"):format(Escaped)
+        else
+            -- Escape backslashes and double quotes in the value
+            local Escaped = Value:gsub('\\', '\\\\'):gsub('"', '\\"')
+            return ('"%s"'):format(Escaped)
+        end
+    end
+    return Value
+end
 
-local FontFamily = 'rbxasset://fonts/families/BuilderSans.json'
-local FontRegular = Font.new(FontFamily, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-local FontMedium = Font.new(FontFamily, Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-local FontBold = Font.new(FontFamily, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+-- Parse command input with support for quoted arguments
+local function ParseCommandInput(Input)
+    -- Returns: CompletedParts, CurrentArgIndex, CurrentArgText, InQuote
+    -- CompletedParts: Table of fully parsed arguments (doesn't include CurrentArgText)
+    -- CurrentArgIndex: The index of the argument being typed (0 means typing command name)
+    -- CurrentArgText: The text of the current argument being typed
+    -- InQuote: Whether we're currently inside an unclosed quote
 
-local MonoFontFamily = 'rbxasset://fonts/families/Inconsolata.json'
-local MonoFontRegular = Font.new(MonoFontFamily, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-local MonoFontMedium = Font.new(MonoFontFamily, Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-local MonoFontBold = Font.new(MonoFontFamily, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    local CompletedParts = {}
+    local CurrentPart = ''
+    local InQuote = false
+    local QuoteChar = nil
+    local IsEscaped = false
+
+    for I = 1, #Input do
+        local Char = Input:sub(I, I)
+
+        if IsEscaped then
+            -- Previous character was backslash - add this character literally
+            CurrentPart = CurrentPart .. Char
+            IsEscaped = false
+        elseif Char == '\\' then
+            -- Escape next character
+            IsEscaped = true
+        elseif not InQuote and (Char == '"' or Char == "'") then
+            -- Start a quoted section
+            InQuote = true
+            QuoteChar = Char
+        elseif InQuote and Char == QuoteChar then
+            -- End the quoted section
+            InQuote = false
+            QuoteChar = nil
+        elseif not InQuote and Char == ' ' then
+            -- Space outside quotes - finish current part
+            if #CurrentPart > 0 then
+                CompletedParts[#CompletedParts + 1] = CurrentPart
+                CurrentPart = ''
+            end
+        else
+            -- Regular character - add to current part
+            CurrentPart = CurrentPart .. Char
+        end
+    end
+
+    -- Determine current state
+    local EndsWithSpace = #Input > 0 and Input:sub(#Input, #Input) == ' ' and not InQuote
+    local CurrentArgIndex
+    local CurrentArgText
+
+    if EndsWithSpace then
+        -- Just finished typing an argument - save it and start new one
+        if #CurrentPart > 0 then
+            CompletedParts[#CompletedParts + 1] = CurrentPart
+        end
+        CurrentArgIndex = #CompletedParts
+        CurrentArgText = ''
+    else
+        -- Still typing current argument
+        CurrentArgIndex = #CompletedParts
+        CurrentArgText = CurrentPart
+    end
+
+    return CompletedParts, CurrentArgIndex, CurrentArgText, InQuote
+end
+
+local function FindPlayerByName(Name)
+    local SearchUsername = false
+    local SearchName = Name
+
+    -- Check if searching for username specifically
+    if SearchName:sub(1, 1) == '@' then
+        SearchUsername = true
+        SearchName = SearchName:sub(2) -- Remove the @ prefix
+    end
+
+    SearchName = SearchName:lower()
+
+    -- Try display name first (if not forced username search)
+    if not SearchUsername then
+        for I = 1, #Players:GetPlayers() do
+            local Player = Players:GetPlayers()[I]
+            if Player.DisplayName:lower():sub(1, #SearchName) == SearchName then
+                return Player
+            end
+        end
+    end
+
+    -- Try username
+    for I = 1, #Players:GetPlayers() do
+        local Player = Players:GetPlayers()[I]
+        if Player.Name:lower():sub(1, #SearchName) == SearchName then
+            return Player
+        end
+    end
+
+    return nil
+end
+
+local function GetLocalPlayerInfo()
+    local Char = LP.Character
+    if not Char then
+        return nil, nil, nil, nil, nil
+    end
+
+    local Root = Char:FindFirstChild('HumanoidRootPart') or Char:FindFirstChild('Torso') or Char:FindFirstChild('UpperTorso')
+    local Humanoid = Char:FindFirstChildOfClass('Humanoid')
+    local Head = Char:FindFirstChild('Head')
+    local Part = Char:FindFirstChildWhichIsA('BasePart')
+
+    return Char, Root, Humanoid, Head, Part
+end
+
+local function GetTargetPlayerInfo(Player)
+    if not Player then
+        return nil, nil, nil, nil, nil, nil
+    end
+
+    local PChar = Player.Character
+    if not PChar then
+        return Player, nil, nil, nil, nil, nil
+    end
+
+    local PRoot = PChar:FindFirstChild('HumanoidRootPart') or PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso')
+    local PHumanoid = PChar:FindFirstChildOfClass('Humanoid')
+    local PHead = PChar:FindFirstChild('Head')
+    local PPart = PChar:FindFirstChildWhichIsA('BasePart')
+
+    return Player, PChar, PRoot, PHumanoid, PHead, PPart
+end
+
+-- Expose player info functions
+G.Tidecaller.GetLocalPlayerInfo = GetLocalPlayerInfo
+G.Tidecaller.GetTargetPlayerInfo = GetTargetPlayerInfo
+
+--/ Settings /--
+local Settings = {}
+
+do
+    local DefaultSettings = {
+        Prefix = "'",
+        Hotkey = 'Quote',
+        Theme = 'catppuccin_mocha'
+    }
+
+    local DefaultTheme = {
+        Font = 'rbxasset://fonts/families/BuilderSans.json',
+        MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
+        Colors = {
+            Base = {30, 30, 46}, Mantle = {24, 24, 37}, Crust = {17, 17, 27},
+            Surface0 = {49, 50, 68}, Surface1 = {69, 71, 90}, Surface2 = {88, 91, 112},
+            Overlay0 = {108, 112, 134}, Overlay1 = {127, 132, 156}, Overlay2 = {147, 153, 178},
+            Text = {205, 214, 244}, Subtext1 = {186, 194, 222}, Subtext0 = {166, 173, 200},
+            Blue = {137, 180, 250}, Lavender = {180, 190, 254}, Sapphire = {116, 199, 236},
+            Sky = {137, 220, 235}, Teal = {148, 226, 213}, Green = {166, 227, 161},
+            Yellow = {249, 226, 175}, Peach = {250, 179, 135}, Maroon = {235, 160, 172},
+            Red = {243, 139, 168}, Mauve = {203, 166, 247}, Pink = {245, 194, 231},
+            Flamingo = {242, 205, 205}, Rosewater = {245, 224, 220}
+        }
+    }
+
+    local function ValidateSettings(Data)
+        if type(Data) ~= 'table' then return false end
+        if type(Data.Prefix) ~= 'string' or #Data.Prefix == 0 then return false end
+        if type(Data.Hotkey) ~= 'string' or #Data.Hotkey == 0 then return false end
+        if type(Data.Theme) ~= 'string' then return false end
+        return true
+    end
+
+    local function ValidateTheme(Data)
+        if type(Data) ~= 'table' then return false end
+        if type(Data.Font) ~= 'string' then return false end
+        if type(Data.MonoFont) ~= 'string' then return false end
+        if type(Data.Colors) ~= 'table' then return false end
+
+        local RequiredColors = {
+            'Base', 'Mantle', 'Crust', 'Surface0', 'Surface1', 'Surface2',
+            'Overlay0', 'Overlay1', 'Overlay2', 'Text', 'Subtext1', 'Subtext0',
+            'Blue', 'Lavender', 'Sapphire', 'Sky', 'Teal', 'Green', 'Yellow',
+            'Peach', 'Maroon', 'Red', 'Mauve', 'Pink', 'Flamingo', 'Rosewater'
+        }
+
+        for I = 1, #RequiredColors do
+            local Color = Data.Colors[RequiredColors[I]]
+            if type(Color) ~= 'table' or #Color ~= 3 then return false end
+            for J = 1, 3 do
+                if type(Color[J]) ~= 'number' then return false end
+            end
+        end
+
+        return true
+    end
+
+    local function LoadSettings()
+        local Path = 'tidecaller/settings.json'
+        local Existed, Invalid = false, false
+
+        if type(isfile) == 'function' and type(readfile) == 'function' and isfile(Path) then
+            Existed = true
+            local Success, Data = pcall(function()
+                return HttpService:JSONDecode(readfile(Path))
+            end)
+            if Success and ValidateSettings(Data) then
+                return Data, false
+            end
+            Invalid = true
+        end
+
+        if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' then
+            pcall(function()
+                if not isfolder('tidecaller') then
+                    makefolder('tidecaller')
+                end
+                writefile(Path, HttpService:JSONEncode(DefaultSettings))
+            end)
+        end
+
+        return DefaultSettings, (Existed and Invalid)
+    end
+
+    local function LoadTheme(ThemeName)
+        local Path = ('tidecaller/themes/%s.json'):format(ThemeName)
+        local Existed, Invalid = false, false
+
+        if type(isfile) == 'function' and type(readfile) == 'function' and isfile(Path) then
+            Existed = true
+            local Success, Data = pcall(function()
+                return HttpService:JSONDecode(readfile(Path))
+            end)
+            if Success and ValidateTheme(Data) then
+                return Data, false
+            end
+            Invalid = true
+        end
+
+        if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' then
+            pcall(function()
+                if not isfolder('tidecaller') then
+                    makefolder('tidecaller')
+                end
+                if not isfolder('tidecaller/themes') then
+                    makefolder('tidecaller/themes')
+                end
+                writefile(Path, HttpService:JSONEncode(DefaultTheme))
+            end)
+        end
+
+        return DefaultTheme, (Existed and Invalid)
+    end
+
+    local SettingsData, SettingsInvalid = LoadSettings()
+    local ThemeData, ThemeInvalid = LoadTheme(SettingsData.Theme)
+
+    Settings.Prefix = SettingsData.Prefix
+    Settings.Hotkey = SettingsData.Hotkey
+    Settings.Theme = SettingsData.Theme
+    Settings.ShowSettingsWarning = SettingsInvalid
+    Settings.ShowThemeWarning = ThemeInvalid
+
+    Settings.Colors = {}
+    for Name, RGB in next, ThemeData.Colors do
+        Settings.Colors[Name] = Color3.fromRGB(RGB[1], RGB[2], RGB[3])
+    end
+
+    Settings.Fonts = {
+        Regular = Font.new(ThemeData.Font, Enum.FontWeight.Regular, Enum.FontStyle.Normal),
+        Medium = Font.new(ThemeData.Font, Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+        Bold = Font.new(ThemeData.Font, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    }
+
+    Settings.MonoFonts = {
+        Regular = Font.new(ThemeData.MonoFont, Enum.FontWeight.Regular, Enum.FontStyle.Normal),
+        Medium = Font.new(ThemeData.MonoFont, Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+        Bold = Font.new(ThemeData.MonoFont, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    }
+end
 
 local BaseZIndex = 1000
 
 -- Expose Colors and Fonts to API
-G.Tidecaller.Colors = Colors
-G.Tidecaller.Fonts = {
-    FontFamily = FontFamily,
-    FontRegular = FontRegular,
-    FontMedium = FontMedium,
-    FontBold = FontBold,
-    MonoFontFamily = MonoFontFamily,
-    MonoFontRegular = MonoFontRegular,
-    MonoFontMedium = MonoFontMedium,
-    MonoFontBold = MonoFontBold,
-}
+G.Tidecaller.Colors = Settings.Colors
+G.Tidecaller.Fonts = Settings.Fonts
+G.Tidecaller.MonoFonts = Settings.MonoFonts
 
 --/ Extensible Command System /--
 local ArgTypes = {}
@@ -421,7 +511,7 @@ local function CreateBasePaletteItem(Order)
     local BaseFrame = Create('Frame', {
         Name = 'PaletteItem',
         Size = UDim2.new(1, -10, 0, 60),
-        BackgroundColor3 = Colors.Base,
+        BackgroundColor3 = Settings.Colors.Base,
         BorderSizePixel = 0,
         LayoutOrder = Order,
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -458,7 +548,7 @@ local UIAssets = {
                     AnchorPoint = Vector2.new(0.5, 0),
                     Position = UDim2.new(0.5, 0, -0.5, 0),
                     Size = UDim2.new(0, 600, 0, 400),
-                    BackgroundColor3 = Colors.Mantle,
+                    BackgroundColor3 = Settings.Colors.Mantle,
                     BorderSizePixel = 0,
                     Visible = false,
                     ZIndex = BaseZIndex
@@ -478,11 +568,11 @@ local UIAssets = {
                         {
                             {'UIGradient', {
                                 Color = ColorSequence.new({
-                                    ColorSequenceKeypoint.new(0, Colors.Mantle),
-                                    ColorSequenceKeypoint.new(0.4, Colors.Blue),
-                                    ColorSequenceKeypoint.new(0.5, Colors.Blue),
-                                    ColorSequenceKeypoint.new(0.6, Colors.Blue),
-                                    ColorSequenceKeypoint.new(1, Colors.Mantle)
+                                    ColorSequenceKeypoint.new(0, Settings.Colors.Mantle),
+                                    ColorSequenceKeypoint.new(0.4, Settings.Colors.Blue),
+                                    ColorSequenceKeypoint.new(0.5, Settings.Colors.Blue),
+                                    ColorSequenceKeypoint.new(0.6, Settings.Colors.Blue),
+                                    ColorSequenceKeypoint.new(1, Settings.Colors.Mantle)
                                 })
                             }}
                         }
@@ -493,13 +583,13 @@ local UIAssets = {
                             Name = 'InputBox',
                             Position = UDim2.new(0, 0, 0, 0),
                             Size = UDim2.new(1, 0, 0, 50),
-                            BackgroundColor3 = Colors.Crust,
+                            BackgroundColor3 = Settings.Colors.Crust,
                             BorderSizePixel = 0,
-                            FontFace = MonoFontMedium,
-                            PlaceholderText = ('[%s] Type a command...'):format(PREFIX),
-                            PlaceholderColor3 = Colors.Overlay0,
+                            FontFace = Settings.MonoFonts.Medium,
+                            PlaceholderText = ('[%s] Type a command...'):format(Settings.Prefix),
+                            PlaceholderColor3 = Settings.Colors.Overlay0,
                             Text = '',
-                            TextColor3 = Colors.Text,
+                            TextColor3 = Settings.Colors.Text,
                             TextSize = 15,
                             TextXAlignment = Enum.TextXAlignment.Left,
                             ClearTextOnFocus = false,
@@ -520,7 +610,7 @@ local UIAssets = {
                             Name = 'Divider',
                             Position = UDim2.new(0, 0, 0, 50),
                             Size = UDim2.new(1, 0, 0, 1),
-                            BackgroundColor3 = Colors.Surface0,
+                            BackgroundColor3 = Settings.Colors.Surface0,
                             BorderSizePixel = 0,
                             ZIndex = BaseZIndex + 1
                         }
@@ -531,10 +621,10 @@ local UIAssets = {
                             Name = 'CommandsList',
                             Position = UDim2.new(0, 0, 0, 51),
                             Size = UDim2.new(1, 0, 1, -51),
-                            BackgroundColor3 = Colors.Mantle,
+                            BackgroundColor3 = Settings.Colors.Mantle,
                             BorderSizePixel = 0,
                             ScrollBarThickness = 6,
-                            ScrollBarImageColor3 = Colors.Surface1,
+                            ScrollBarImageColor3 = Settings.Colors.Surface1,
                             CanvasSize = UDim2.new(0, 0, 0, 0),
                             AutomaticCanvasSize = Enum.AutomaticSize.Y,
                             ZIndex = BaseZIndex + 1
@@ -585,8 +675,8 @@ local UIAssets = {
                 Position = UDim2.new(0.5, 0, 0, 0),
                 Size = UDim2.new(0, 120, 1, 0),
                 BackgroundTransparency = 1,
-                FontFace = MonoFontBold,
-                TextColor3 = Colors.Subtext0,
+                FontFace = Settings.MonoFonts.Bold,
+                TextColor3 = Settings.Colors.Subtext0,
                 TextSize = 11,
                 AnchorPoint = Vector2.new(0.5, 0),
                 TextXAlignment = Enum.TextXAlignment.Center,
@@ -600,7 +690,7 @@ local UIAssets = {
         {
             Name = 'Notification',
             Size = UDim2.new(1, 0, 0, 0),
-            BackgroundColor3 = Colors.Base,
+            BackgroundColor3 = Settings.Colors.Base,
             BorderSizePixel = 0,
             AutomaticSize = Enum.AutomaticSize.Y,
             ZIndex = BaseZIndex + 1
@@ -626,9 +716,9 @@ local UIAssets = {
                 {
                     {'UIGradient', {
                         Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Colors.Surface0),
-                            ColorSequenceKeypoint.new(0.5, Colors.Blue),
-                            ColorSequenceKeypoint.new(1, Colors.Surface0)
+                            ColorSequenceKeypoint.new(0, Settings.Colors.Surface0),
+                            ColorSequenceKeypoint.new(0.5, Settings.Colors.Blue),
+                            ColorSequenceKeypoint.new(1, Settings.Colors.Surface0)
                         })
                     }}
                 }
@@ -639,9 +729,9 @@ local UIAssets = {
                 Position = UDim2.new(1, 0, 0, 0),
                 Size = UDim2.new(0, 70, 0, 14),
                 BackgroundTransparency = 1,
-                FontFace = MonoFontBold,
+                FontFace = Settings.MonoFonts.Bold,
                 Text = '[12:34:56]',
-                TextColor3 = Colors.Overlay1,
+                TextColor3 = Settings.Colors.Overlay1,
                 TextSize = 12,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 TextYAlignment = Enum.TextYAlignment.Top
@@ -651,9 +741,9 @@ local UIAssets = {
                 Position = UDim2.new(0, 0, 0, 0),
                 Size = UDim2.new(1, -75, 0, 0),
                 BackgroundTransparency = 1,
-                FontFace = FontBold,
+                FontFace = Settings.Fonts.Bold,
                 Text = 'Notification Title',
-                TextColor3 = Colors.Text,
+                TextColor3 = Settings.Colors.Text,
                 TextSize = 18,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextYAlignment = Enum.TextYAlignment.Top,
@@ -666,10 +756,10 @@ local UIAssets = {
                     Position = UDim2.new(0, 0, 0, 25),
                     Size = UDim2.new(1, 0, 0, 0),
                     BackgroundTransparency = 1,
-                    FontFace = FontRegular,
+                    FontFace = Settings.Fonts.Regular,
                     TextWrapped = true,
                     Text = 'Notification message',
-                    TextColor3 = Colors.Subtext1,
+                    TextColor3 = Settings.Colors.Subtext1,
                     TextSize = 16,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Top,
@@ -698,7 +788,7 @@ local NotificationContainer = ScreenGui:WaitForChild('NotificationContainer')
 --/ UI Helper Functions /--
 -- Create a PaletteItem for a command
 local function CreateCommandPaletteItem(CommandData, Order)
-    local CommandNameColor = Colors.Blue
+    local CommandNameColor = Settings.Colors.Blue
     if #CommandData.Args > 0 then
         local FirstArgType = CommandData.Args[1][1]
         local ArgType = ArgTypes[FirstArgType]
@@ -740,8 +830,8 @@ local function CreateCommandPaletteItem(CommandData, Order)
         Position = UDim2.new(0, 0, 0, 28),
         Size = UDim2.new(1, 0, 0, 0),
         BackgroundTransparency = 1,
-        FontFace = FontRegular,
-        TextColor3 = Colors.Subtext1,
+        FontFace = Settings.Fonts.Regular,
+        TextColor3 = Settings.Colors.Subtext1,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
@@ -755,7 +845,7 @@ local function CreateCommandPaletteItem(CommandData, Order)
     local NameBlock = Create('Frame', {
         Name = 'CommandNameBlock',
         Size = UDim2.new(0, 0, 0, 20),
-        BackgroundColor3 = Colors.Crust,
+        BackgroundColor3 = Settings.Colors.Crust,
         BorderSizePixel = 0,
         AutomaticSize = Enum.AutomaticSize.X,
         LayoutOrder = 1,
@@ -779,7 +869,7 @@ local function CreateCommandPaletteItem(CommandData, Order)
         Name = 'CommandName',
         Size = UDim2.new(0, 0, 1, 0),
         BackgroundTransparency = 1,
-        FontFace = MonoFontBold,
+        FontFace = Settings.MonoFonts.Bold,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         AutomaticSize = Enum.AutomaticSize.X,
@@ -793,7 +883,7 @@ local function CreateCommandPaletteItem(CommandData, Order)
         local AliasBlock = Create('Frame', {
             Name = 'AliasBlock',
             Size = UDim2.new(0, 0, 0, 20),
-            BackgroundColor3 = Colors.Mantle,
+            BackgroundColor3 = Settings.Colors.Mantle,
             BorderSizePixel = 0,
             AutomaticSize = Enum.AutomaticSize.X,
             LayoutOrder = 2,
@@ -817,8 +907,8 @@ local function CreateCommandPaletteItem(CommandData, Order)
             Name = 'AliasLabel',
             Size = UDim2.new(0, 0, 1, 0),
             BackgroundTransparency = 1,
-            FontFace = MonoFontMedium,
-            TextColor3 = Colors.Overlay1,
+            FontFace = Settings.MonoFonts.Medium,
+            TextColor3 = Settings.Colors.Overlay1,
             TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             AutomaticSize = Enum.AutomaticSize.X,
@@ -835,12 +925,12 @@ local function CreateCommandPaletteItem(CommandData, Order)
         local IsOptional = ArgData[3]
         local DefaultValue = ArgData[4]
         local ArgTypeConfig = ArgTypes[ArgType]
-        local ArgColor = ArgTypeConfig and ArgTypeConfig.Color or Colors.Sapphire
+        local ArgColor = ArgTypeConfig and ArgTypeConfig.Color or Settings.Colors.Sapphire
 
         local ArgBlock = Create('Frame', {
             Name = 'ArgBlock',
             Size = UDim2.new(0, 0, 0, 20),
-            BackgroundColor3 = Colors.Mantle,
+            BackgroundColor3 = Settings.Colors.Mantle,
             BorderSizePixel = 0,
             AutomaticSize = Enum.AutomaticSize.X,
             LayoutOrder = 10 + ArgI,
@@ -879,7 +969,7 @@ local function CreateCommandPaletteItem(CommandData, Order)
             Name = 'ArgLabel',
             Size = UDim2.new(0, 0, 1, 0),
             BackgroundTransparency = 1,
-            FontFace = MonoFontMedium,
+            FontFace = Settings.MonoFonts.Medium,
             TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             AutomaticSize = Enum.AutomaticSize.X,
@@ -1004,12 +1094,12 @@ local function Notify(Type, Title, Message, Duration)
     NotificationOrder = NotificationOrder + 1
 
     local TypeColors = {
-        Success = Colors.Green,
-        Info = Colors.Blue,
-        Warning = Colors.Yellow,
-        Error = Colors.Red
+        Success = Settings.Colors.Green,
+        Info = Settings.Colors.Blue,
+        Warning = Settings.Colors.Yellow,
+        Error = Settings.Colors.Red
     }
-    local AccentColor = TypeColors[Type] or Colors.Blue
+    local AccentColor = TypeColors[Type] or Settings.Colors.Blue
 
     local NotificationClone = CreateAsset(UIAssets.Notification)
     NotificationClone.Name = 'Notification_' .. NotificationOrder
@@ -1028,9 +1118,9 @@ local function Notify(Type, Title, Message, Duration)
         local AccentGradient = AccentBar:FindFirstChild('UIGradient')
         if AccentGradient then
             AccentGradient.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Colors.Surface0),
+                ColorSequenceKeypoint.new(0, Settings.Colors.Surface0),
                 ColorSequenceKeypoint.new(0.5, AccentColor),
-                ColorSequenceKeypoint.new(1, Colors.Surface0)
+                ColorSequenceKeypoint.new(1, Settings.Colors.Surface0)
             })
         end
     end
@@ -1150,7 +1240,7 @@ local function ShowArgSuggestions(ArgType, Query, PreviousArgs)
     SelectedCommandIndex = 0
     if CurrentlyHighlighted then
         Tween(CurrentlyHighlighted, 0.15, 'Quad', 'Out', false, {
-            BackgroundColor3 = Colors.Base
+            BackgroundColor3 = Settings.Colors.Base
         })
         CurrentlyHighlighted = nil
     end
@@ -1161,7 +1251,7 @@ local function HighlightPaletteItem(Index)
     -- Remove previous highlight
     if CurrentlyHighlighted then
         Tween(CurrentlyHighlighted, 0.15, 'Quad', 'Out', false, {
-            BackgroundColor3 = Colors.Base
+            BackgroundColor3 = Settings.Colors.Base
         })
     end
 
@@ -1179,7 +1269,7 @@ local function HighlightPaletteItem(Index)
         SelectedCommandIndex = Index
 
         Tween(Item, 0.15, 'Quad', 'Out', false, {
-            BackgroundColor3 = Colors.Surface0
+            BackgroundColor3 = Settings.Colors.Surface0
         })
 
         -- Scroll into view
@@ -1316,8 +1406,8 @@ end
 
 local function FilterCommands(Query)
     -- Remove prefix if present
-    if Query:sub(1, #PREFIX) == PREFIX then
-        Query = Query:sub(#PREFIX + 1)
+    if Query:sub(1, #Settings.Prefix) == Settings.Prefix then
+        Query = Query:sub(#Settings.Prefix + 1)
     end
 
     -- Parse the query with quote support
@@ -1457,7 +1547,7 @@ local function FilterCommands(Query)
     SelectedCommandIndex = 0
     if CurrentlyHighlighted then
         Tween(CurrentlyHighlighted, 0.15, 'Quad', 'Out', false, {
-            BackgroundColor3 = Colors.Base
+            BackgroundColor3 = Settings.Colors.Base
         })
         CurrentlyHighlighted = nil
     end
@@ -1465,38 +1555,38 @@ end
 
 --/ Cleanup Function /--
 local function Cleanup()
-	-- Destroy UI elements
-	if ScreenGui and ScreenGui.Parent then
-		pcall(function()
-			ScreenGui:Destroy()
-		end)
-	end
+    -- Destroy UI elements
+    if ScreenGui and ScreenGui.Parent then
+        pcall(function()
+            ScreenGui:Destroy()
+        end)
+    end
 
-	-- Disconnect and destroy all tracked connections/objects
-	for I = 1, #C do
-		local Obj = C[I]
-		pcall(function()
-			Obj:Disconnect()
-		end)
-		pcall(function()
-			Obj:Destroy()
-		end)
-	end
+    -- Disconnect and destroy all tracked connections/objects
+    for I = 1, #C do
+        local Obj = C[I]
+        pcall(function()
+            Obj:Disconnect()
+        end)
+        pcall(function()
+            Obj:Destroy()
+        end)
+    end
 
-	-- Reset global table
-	G.Tidecaller = nil
+    -- Reset global table
+    G.Tidecaller = nil
 end
 
 --/ Animated Accent Line /--
 local GradientColors = {
-    Colors.Red,
-    Colors.Peach,
-    Colors.Green,
-    Colors.Sky,
-    Colors.Blue,
-    Colors.Lavender,
-    Colors.Pink,
-    Colors.Mauve
+    Settings.Colors.Red,
+    Settings.Colors.Peach,
+    Settings.Colors.Green,
+    Settings.Colors.Sky,
+    Settings.Colors.Blue,
+    Settings.Colors.Lavender,
+    Settings.Colors.Pink,
+    Settings.Colors.Mauve
 }
 
 local CurrentIndex = 1
@@ -1527,11 +1617,11 @@ C[#C + 1] = PreRender:Connect(function(DeltaTime)
     local RightColor = NextColor:Lerp(NextNextColor, Alpha)
 
     AccentLineTopGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Colors.Mantle),
+        ColorSequenceKeypoint.new(0, Settings.Colors.Mantle),
         ColorSequenceKeypoint.new(0.4, LeftColor),
         ColorSequenceKeypoint.new(0.5, CenterColor),
         ColorSequenceKeypoint.new(0.6, RightColor),
-        ColorSequenceKeypoint.new(1, Colors.Mantle)
+        ColorSequenceKeypoint.new(1, Settings.Colors.Mantle)
     })
 
     -- Handle delayed repeat for navigation keys
@@ -1561,7 +1651,7 @@ end)
 C[#C + 1] = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
     if Input.UserInputType == Enum.UserInputType.Keyboard then
         -- Handle hotkey (not processed by game)
-        if not GameProcessed and Input.KeyCode == Enum.KeyCode[HOTKEY] then
+        if not GameProcessed and Input.KeyCode == Enum.KeyCode[Settings.Hotkey] then
             TogglePalette()
             return
         end
@@ -1641,8 +1731,8 @@ end)
 --/ Command Execution /--
 local function ExecuteCommand(Input)
     -- Remove prefix if present
-    if Input:sub(1, #PREFIX) == PREFIX then
-        Input = Input:sub(#PREFIX + 1)
+    if Input:sub(1, #Settings.Prefix) == Settings.Prefix then
+        Input = Input:sub(#Settings.Prefix + 1)
     end
 
     local Parts, CurrentArgIndex, CurrentArgText = ParseCommandInput(Input)
@@ -1769,28 +1859,28 @@ C[#C + 1] = TextChatService.SendingMessage:Connect(function(Message)
     local Text = Message.Text
 
     -- Check if the message starts with the prefix
-    if Text:sub(1, #PREFIX) == PREFIX then
+    if Text:sub(1, #Settings.Prefix) == Settings.Prefix then
         ExecuteCommand(Text)
     end
 end)
 
 --/ Argument Types /--
 RegisterArgType('number', {
-    Color = Colors.Yellow,
+    Color = Settings.Colors.Yellow,
     GetValue = function(Str)
         return tonumber(Str)
     end
 })
 
 RegisterArgType('string', {
-    Color = Colors.Pink,
+    Color = Settings.Colors.Pink,
     GetValue = function(Str)
         return Str
     end
 })
 
 RegisterArgType('boolean', {
-    Color = Colors.Mauve,
+    Color = Settings.Colors.Mauve,
     GetValue = function(Str)
         local Lower = Str:lower()
         if Lower == 't' or Lower == 'true' or Lower == '1' then
@@ -1825,9 +1915,9 @@ RegisterArgType('boolean', {
 
         local TextColor
         if Lower == 't' or Lower == 'true' or Lower == '1' then
-            TextColor = Colors.Green
+            TextColor = Settings.Colors.Green
         else
-            TextColor = Colors.Red
+            TextColor = Settings.Colors.Red
         end
 
         local ValueLabel = Create('TextLabel', {
@@ -1835,7 +1925,7 @@ RegisterArgType('boolean', {
             Position = UDim2.new(0, 0, 0, 0),
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundTransparency = 1,
-            FontFace = MonoFontBold,
+            FontFace = Settings.MonoFonts.Bold,
             Text = BoolValue,
             TextColor3 = TextColor,
             TextSize = 14,
@@ -1848,7 +1938,7 @@ RegisterArgType('boolean', {
 })
 
 RegisterArgType('player', {
-    Color = Colors.Green,
+    Color = Settings.Colors.Green,
     GetValue = function(Str)
         return FindPlayerByName(Str)
     end,
@@ -1958,7 +2048,7 @@ RegisterArgType('player', {
             Name = 'Avatar',
             Position = UDim2.new(0, 0, 0, 0),
             Size = UDim2.new(0, 44, 0, 44),
-            BackgroundColor3 = Colors.Surface0,
+            BackgroundColor3 = Settings.Colors.Surface0,
             BorderSizePixel = 0,
             Image = ('rbxthumb://type=AvatarHeadShot&id=%d&w=150&h=150'):format(Player.UserId)
         })
@@ -1980,9 +2070,9 @@ RegisterArgType('player', {
             Position = UDim2.new(0, 0, 0, 0),
             Size = UDim2.new(1, 0, 0, 20),
             BackgroundTransparency = 1,
-            FontFace = FontBold,
+            FontFace = Settings.Fonts.Bold,
             Text = Player.DisplayName,
-            TextColor3 = Colors.Text,
+            TextColor3 = Settings.Colors.Text,
             TextSize = 18,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTruncate = Enum.TextTruncate.AtEnd,
@@ -1994,9 +2084,9 @@ RegisterArgType('player', {
             Position = UDim2.new(0, 0, 0, 22),
             Size = UDim2.new(1, 0, 0, 16),
             BackgroundTransparency = 1,
-            FontFace = MonoFontMedium,
+            FontFace = Settings.MonoFonts.Medium,
             Text = ('@%s'):format(Player.Name),
-            TextColor3 = Colors.Subtext0,
+            TextColor3 = Settings.Colors.Subtext0,
             TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTruncate = Enum.TextTruncate.AtEnd,
@@ -3064,6 +3154,16 @@ RegisterCommand({
 --/ Main /--
 G.Tidecaller.Loaded = true
 wait(1)
-Notify('Success', 'Script Loaded', ('Welcome to Tidecaller. Press the %s button to open the command palette, and the UP/DOWN arrow keys to navigate the command list'):format(HOTKEY), 15)
+Notify('Success', 'Script Loaded', ('Welcome to Tidecaller. Press the %s button to open the command palette, and the UP/DOWN arrow keys to navigate the command list'):format(Settings.Hotkey), 15)
 wait(1)
 Notify('Info', 'Credits', 'Script developed by riptxde')
+
+-- Show settings warning if needed
+if Settings.ShowSettingsWarning then
+    Notify('Warning', 'Settings Invalid', 'The settings file was invalid and has been reset to defaults. Check workspace/tidecaller/settings.json to customize.', 10)
+end
+
+-- Show theme warning if needed
+if Settings.ShowThemeWarning then
+    Notify('Warning', 'Theme Invalid', ('The theme file "%s" was invalid and has been reset to defaults. Check workspace/tidecaller/themes/ to customize.'):format(Settings.Theme), 10)
+end
