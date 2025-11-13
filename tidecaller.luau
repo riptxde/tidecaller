@@ -313,213 +313,167 @@ G.Tidecaller.GetTargetPlayerInfo = GetTargetPlayerInfo
 --/ Settings /--
 local Settings = {}
 
+local DefaultSettings = {
+    Prefix = "'",
+    Hotkey = 'Quote',
+    Theme = 'catppuccin_mocha'
+}
+
+local DefaultThemes = {
+    catppuccin_mocha = {
+        Font = 'rbxasset://fonts/families/BuilderSans.json',
+        MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
+        Colors = {
+            Base = {30, 30, 46}, Mantle = {24, 24, 37}, Crust = {17, 17, 27},
+            Surface0 = {49, 50, 68}, Surface1 = {69, 71, 90}, Surface2 = {88, 91, 112},
+            Overlay0 = {108, 112, 134}, Overlay1 = {127, 132, 156}, Overlay2 = {147, 153, 178},
+            Text = {205, 214, 244}, Subtext1 = {186, 194, 222}, Subtext0 = {166, 173, 200},
+            Blue = {137, 180, 250}, Lavender = {180, 190, 254}, Sapphire = {116, 199, 236},
+            Sky = {137, 220, 235}, Teal = {148, 226, 213}, Green = {166, 227, 161},
+            Yellow = {249, 226, 175}, Peach = {250, 179, 135}, Maroon = {235, 160, 172},
+            Red = {243, 139, 168}, Mauve = {203, 166, 247}, Pink = {245, 194, 231},
+            Flamingo = {242, 205, 205}, Rosewater = {245, 224, 220}
+        }
+    },
+    catppuccin_latte = {
+        Font = 'rbxasset://fonts/families/BuilderSans.json',
+        MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
+        Colors = {
+            Base = {239, 241, 245}, Mantle = {230, 233, 239}, Crust = {220, 224, 232},
+            Surface0 = {204, 208, 218}, Surface1 = {188, 192, 204}, Surface2 = {172, 176, 190},
+            Overlay0 = {156, 160, 176}, Overlay1 = {140, 143, 161}, Overlay2 = {124, 127, 147},
+            Text = {76, 79, 105}, Subtext1 = {92, 95, 119}, Subtext0 = {108, 111, 133},
+            Blue = {30, 102, 245}, Lavender = {114, 135, 253}, Sapphire = {32, 159, 181},
+            Sky = {4, 165, 229}, Teal = {23, 146, 153}, Green = {64, 160, 43},
+            Yellow = {223, 142, 29}, Peach = {254, 100, 11}, Maroon = {230, 69, 83},
+            Red = {210, 15, 57}, Mauve = {136, 57, 239}, Pink = {234, 118, 203},
+            Flamingo = {221, 120, 120}, Rosewater = {220, 138, 120}
+        }
+    }
+}
+
+local RequiredColors = {
+    'Base', 'Mantle', 'Crust', 'Surface0', 'Surface1', 'Surface2',
+    'Overlay0', 'Overlay1', 'Overlay2', 'Text', 'Subtext1', 'Subtext0',
+    'Blue', 'Lavender', 'Sapphire', 'Sky', 'Teal', 'Green', 'Yellow',
+    'Peach', 'Maroon', 'Red', 'Mauve', 'Pink', 'Flamingo', 'Rosewater'
+}
+
+local function ValidateTheme(Data)
+    if type(Data) ~= 'table' then return false end
+    if type(Data.Font) ~= 'string' then return false end
+    if type(Data.MonoFont) ~= 'string' then return false end
+    if type(Data.Colors) ~= 'table' then return false end
+
+    for I = 1, #RequiredColors do
+        local Color = Data.Colors[RequiredColors[I]]
+        if type(Color) ~= 'table' or #Color ~= 3 then return false end
+        for J = 1, 3 do
+            if type(Color[J]) ~= 'number' then return false end
+        end
+    end
+
+    return true
+end
+
+local function SaveSettings()
+    if type(writefile) == 'function' and type(makefolder) == 'function' and type(isfolder) == 'function' then
+        pcall(function()
+            if not isfolder('tidecaller') then
+                makefolder('tidecaller')
+            end
+
+            writefile('tidecaller/settings.json', HttpService:JSONEncode({
+                Prefix = Settings.Prefix,
+                Hotkey = Settings.Hotkey,
+                Theme = Settings.Theme
+            }))
+        end)
+    end
+end
+
+local function ValidateThemeFile(ThemeName)
+    local ThemePath = ('tidecaller/themes/%s.json'):format(ThemeName)
+
+    if type(isfile) ~= 'function' or not isfile(ThemePath) then
+        return false, 'Theme file not found'
+    end
+
+    local Success, ThemeData = pcall(function()
+        return HttpService:JSONDecode(readfile(ThemePath))
+    end)
+
+    if Success and ValidateTheme(ThemeData) then
+        return true, nil
+    end
+
+    return false, 'Theme file is invalid or corrupted'
+end
+
+-- Initialize settings and theme
 do
-    local DefaultSettings = {
-        Prefix = "'",
-        Hotkey = 'Quote',
-        Theme = 'catppuccin_mocha'
-    }
+    -- Load settings
+    local SettingsData = DefaultSettings
+    local SettingsInvalid = false
 
-    local DefaultThemes = {
-        catppuccin_mocha = {
-            Font = 'rbxasset://fonts/families/BuilderSans.json',
-            MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
-            Colors = {
-                Base = {30, 30, 46},
-                Mantle = {24, 24, 37},
-                Crust = {17, 17, 27},
-                Surface0 = {49, 50, 68},
-                Surface1 = {69, 71, 90},
-                Surface2 = {88, 91, 112},
-                Overlay0 = {108, 112, 134},
-                Overlay1 = {127, 132, 156},
-                Overlay2 = {147, 153, 178},
-                Text = {205, 214, 244},
-                Subtext1 = {186, 194, 222},
-                Subtext0 = {166, 173, 200},
-                Blue = {137, 180, 250},
-                Lavender = {180, 190, 254},
-                Sapphire = {116, 199, 236},
-                Sky = {137, 220, 235},
-                Teal = {148, 226, 213},
-                Green = {166, 227, 161},
-                Yellow = {249, 226, 175},
-                Peach = {250, 179, 135},
-                Maroon = {235, 160, 172},
-                Red = {243, 139, 168},
-                Mauve = {203, 166, 247},
-                Pink = {245, 194, 231},
-                Flamingo = {242, 205, 205},
-                Rosewater = {245, 224, 220}
-            }
-        },
-        catppuccin_latte = {
-            Font = 'rbxasset://fonts/families/BuilderSans.json',
-            MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
-            Colors = {
-                Base = {239, 241, 245},
-                Mantle = {230, 233, 239},
-                Crust = {220, 224, 232},
-                Surface0 = {204, 208, 218},
-                Surface1 = {188, 192, 204},
-                Surface2 = {172, 176, 190},
-                Overlay0 = {156, 160, 176},
-                Overlay1 = {140, 143, 161},
-                Overlay2 = {124, 127, 147},
-                Text = {76, 79, 105},
-                Subtext1 = {92, 95, 119},
-                Subtext0 = {108, 111, 133},
-                Blue = {30, 102, 245},
-                Lavender = {114, 135, 253},
-                Sapphire = {32, 159, 181},
-                Sky = {4, 165, 229},
-                Teal = {23, 146, 153},
-                Green = {64, 160, 43},
-                Yellow = {223, 142, 29},
-                Peach = {254, 100, 11},
-                Maroon = {230, 69, 83},
-                Red = {210, 15, 57},
-                Mauve = {136, 57, 239},
-                Pink = {234, 118, 203},
-                Flamingo = {221, 120, 120},
-                Rosewater = {220, 138, 120}
-            }
-        }
-    }
-
-    local function ValidateSettings(Data)
-        if type(Data) ~= 'table' then return false end
-        if type(Data.Prefix) ~= 'string' or #Data.Prefix == 0 then return false end
-        if type(Data.Hotkey) ~= 'string' or #Data.Hotkey == 0 then return false end
-        if type(Data.Theme) ~= 'string' then return false end
-        return true
+    if type(isfile) == 'function' and type(readfile) == 'function' and isfile('tidecaller/settings.json') then
+        local Success, Data = pcall(function()
+            return HttpService:JSONDecode(readfile('tidecaller/settings.json'))
+        end)
+        if Success and type(Data) == 'table' and type(Data.Prefix) == 'string' and #Data.Prefix > 0
+            and type(Data.Hotkey) == 'string' and #Data.Hotkey > 0 and type(Data.Theme) == 'string' then
+            SettingsData = Data
+        else
+            SettingsInvalid = Success
+            SaveSettings()
+        end
+    else
+        SaveSettings()
     end
 
-    local function ValidateTheme(Data)
-        if type(Data) ~= 'table' then return false end
-        if type(Data.Font) ~= 'string' then return false end
-        if type(Data.MonoFont) ~= 'string' then return false end
-        if type(Data.Colors) ~= 'table' then return false end
+    -- Ensure theme folders exist and write default themes
+    if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' and type(isfile) == 'function' then
+        pcall(function()
+            if not isfolder('tidecaller') then makefolder('tidecaller') end
+            if not isfolder('tidecaller/themes') then makefolder('tidecaller/themes') end
 
-        local RequiredColors = {
-            'Base', 'Mantle', 'Crust', 'Surface0', 'Surface1', 'Surface2',
-            'Overlay0', 'Overlay1', 'Overlay2', 'Text', 'Subtext1', 'Subtext0',
-            'Blue', 'Lavender', 'Sapphire', 'Sky', 'Teal', 'Green', 'Yellow',
-            'Peach', 'Maroon', 'Red', 'Mauve', 'Pink', 'Flamingo', 'Rosewater'
-        }
-
-        for I = 1, #RequiredColors do
-            local Color = Data.Colors[RequiredColors[I]]
-            if type(Color) ~= 'table' or #Color ~= 3 then return false end
-            for J = 1, 3 do
-                if type(Color[J]) ~= 'number' then return false end
-            end
-        end
-
-        return true
-    end
-
-    local function LoadSettings()
-        local Path = 'tidecaller/settings.json'
-        local Existed, Invalid = false, false
-
-        if type(isfile) == 'function' and type(readfile) == 'function' and isfile(Path) then
-            Existed = true
-            local Success, Data = pcall(function()
-                return HttpService:JSONDecode(readfile(Path))
-            end)
-            if Success and ValidateSettings(Data) then
-                return Data, false
-            end
-            Invalid = true
-        end
-
-        if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' then
-            pcall(function()
-                if not isfolder('tidecaller') then
-                    makefolder('tidecaller')
-                end
-                writefile(Path, HttpService:JSONEncode(DefaultSettings))
-            end)
-        end
-
-        return DefaultSettings, (Existed and Invalid)
-    end
-
-    local function FormatThemeJSON(Theme)
-        local Lines = {
-            '{',
-            ('\t"Font": "%s",'):format(Theme.Font),
-            ('\t"MonoFont": "%s",'):format(Theme.MonoFont),
-            '\t"Colors": {'
-        }
-
-        local ColorKeys = {}
-        for Key in next, Theme.Colors do
-            ColorKeys[#ColorKeys + 1] = Key
-        end
-        table.sort(ColorKeys)
-
-        for I = 1, #ColorKeys do
-            local Key = ColorKeys[I]
-            local RGB = Theme.Colors[Key]
-            local Line = ('\t\t"%s": [%d, %d, %d]'):format(Key, RGB[1], RGB[2], RGB[3])
-            if I < #ColorKeys then
-                Line = Line .. ','
-            end
-            Lines[#Lines + 1] = Line
-        end
-
-        Lines[#Lines + 1] = '\t}'
-        Lines[#Lines + 1] = '}'
-
-        return table.concat(Lines, '\n')
-    end
-
-    local function LoadTheme(ThemeName)
-        local Path = ('tidecaller/themes/%s.json'):format(ThemeName)
-        local Existed, Invalid = false, false
-
-        -- First, ensure all default themes exist
-        if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' and type(isfile) == 'function' then
-            pcall(function()
-                if not isfolder('tidecaller') then
-                    makefolder('tidecaller')
-                end
-                if not isfolder('tidecaller/themes') then
-                    makefolder('tidecaller/themes')
-                end
-
-                -- Create all default themes if they don't exist
-                for Name, Theme in next, DefaultThemes do
-                    local ThemePath = ('tidecaller/themes/%s.json'):format(Name)
-                    if not isfile(ThemePath) then
-                        writefile(ThemePath, FormatThemeJSON(Theme))
+            for Name, Theme in next, DefaultThemes do
+                local ThemePath = ('tidecaller/themes/%s.json'):format(Name)
+                if not isfile(ThemePath) then
+                    local Lines = {'{', ('\t"Font": "%s",'):format(Theme.Font), ('\t"MonoFont": "%s",'):format(Theme.MonoFont), '\t"Colors": {'}
+                    local ColorKeys = {}
+                    for Key in next, Theme.Colors do ColorKeys[#ColorKeys + 1] = Key end
+                    table.sort(ColorKeys)
+                    for I = 1, #ColorKeys do
+                        local Key = ColorKeys[I]
+                        local RGB = Theme.Colors[Key]
+                        Lines[#Lines + 1] = ('\t\t"%s": [%d, %d, %d]%s'):format(Key, RGB[1], RGB[2], RGB[3], I < #ColorKeys and ',' or '')
                     end
+                    Lines[#Lines + 1] = '\t}'
+                    Lines[#Lines + 1] = '}'
+                    writefile(ThemePath, table.concat(Lines, '\n'))
                 end
-            end)
-        end
-
-        -- Now try to load the requested theme
-        if type(isfile) == 'function' and type(readfile) == 'function' and isfile(Path) then
-            Existed = true
-            local Success, Data = pcall(function()
-                return HttpService:JSONDecode(readfile(Path))
-            end)
-            if Success and ValidateTheme(Data) then
-                return Data, false
             end
-            Invalid = true
-        end
-
-        -- Return the appropriate default theme based on name, or catppuccin_mocha as fallback
-        local FallbackTheme = DefaultThemes[ThemeName] or DefaultThemes.catppuccin_mocha
-        return FallbackTheme, (Existed and Invalid)
+        end)
     end
 
-    local SettingsData, SettingsInvalid = LoadSettings()
-    local ThemeData, ThemeInvalid = LoadTheme(SettingsData.Theme)
+    -- Load theme
+    local ThemeData = DefaultThemes[SettingsData.Theme] or DefaultThemes.catppuccin_mocha
+    local ThemeInvalid = false
+    local ThemePath = ('tidecaller/themes/%s.json'):format(SettingsData.Theme)
 
+    if type(isfile) == 'function' and type(readfile) == 'function' and isfile(ThemePath) then
+        local Success, Data = pcall(function()
+            return HttpService:JSONDecode(readfile(ThemePath))
+        end)
+        if Success and ValidateTheme(Data) then
+            ThemeData = Data
+        else
+            ThemeInvalid = Success
+        end
+    end
+
+    -- Apply settings
     Settings.Prefix = SettingsData.Prefix
     Settings.Hotkey = SettingsData.Hotkey
     Settings.Theme = SettingsData.Theme
@@ -3485,7 +3439,9 @@ RegisterCommand({
     Aliases = {},
     Description = 'Change the hotkey to open the command palette',
     Execute = function(Hotkey)
-        -- TODO: Implement functionality
+        Settings.Hotkey = Hotkey
+        SaveSettings()
+        Notify('Success', 'Hotkey Changed', ('Hotkey changed to %s'):format(Hotkey))
     end
 })
 
@@ -3496,7 +3452,15 @@ RegisterCommand({
     Aliases = {},
     Description = 'Change the command prefix for commands run via in-game chat and the input box',
     Execute = function(Prefix)
-        -- TODO: Implement functionality
+        if #Prefix == 0 then
+            Notify('Error', 'Prefix Change Failed', 'Prefix cannot be empty')
+            return
+        end
+
+        Settings.Prefix = Prefix
+        InputBox.PlaceholderText = ('[%s] Type a command...'):format(Prefix)
+        SaveSettings()
+        Notify('Success', 'Prefix Changed', ('Prefix changed to "%s"'):format(Prefix))
     end
 })
 
@@ -3507,7 +3471,16 @@ RegisterCommand({
     Aliases = {},
     Description = 'Change the UI theme',
     Execute = function(Theme)
-        -- TODO: Implement functionality
+        local Valid, ErrorMsg = ValidateThemeFile(Theme)
+
+        if not Valid then
+            Notify('Error', 'Theme Change Failed', ErrorMsg)
+            return
+        end
+
+        Settings.Theme = Theme
+        SaveSettings()
+        Notify('Success', 'Theme Changed', ('Theme changed to "%s". Reload the script to apply changes.'):format(Theme), 8)
     end
 })
 
