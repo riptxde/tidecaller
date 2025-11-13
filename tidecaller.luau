@@ -324,15 +324,32 @@ do
         Font = 'rbxasset://fonts/families/BuilderSans.json',
         MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
         Colors = {
-            Base = {30, 30, 46}, Mantle = {24, 24, 37}, Crust = {17, 17, 27},
-            Surface0 = {49, 50, 68}, Surface1 = {69, 71, 90}, Surface2 = {88, 91, 112},
-            Overlay0 = {108, 112, 134}, Overlay1 = {127, 132, 156}, Overlay2 = {147, 153, 178},
-            Text = {205, 214, 244}, Subtext1 = {186, 194, 222}, Subtext0 = {166, 173, 200},
-            Blue = {137, 180, 250}, Lavender = {180, 190, 254}, Sapphire = {116, 199, 236},
-            Sky = {137, 220, 235}, Teal = {148, 226, 213}, Green = {166, 227, 161},
-            Yellow = {249, 226, 175}, Peach = {250, 179, 135}, Maroon = {235, 160, 172},
-            Red = {243, 139, 168}, Mauve = {203, 166, 247}, Pink = {245, 194, 231},
-            Flamingo = {242, 205, 205}, Rosewater = {245, 224, 220}
+            Base = {30, 30, 46},
+            Mantle = {24, 24, 37},
+            Crust = {17, 17, 27},
+            Surface0 = {49, 50, 68},
+            Surface1 = {69, 71, 90},
+            Surface2 = {88, 91, 112},
+            Overlay0 = {108, 112, 134},
+            Overlay1 = {127, 132, 156},
+            Overlay2 = {147, 153, 178},
+            Text = {205, 214, 244},
+            Subtext1 = {186, 194, 222},
+            Subtext0 = {166, 173, 200},
+            Blue = {137, 180, 250},
+            Lavender = {180, 190, 254},
+            Sapphire = {116, 199, 236},
+            Sky = {137, 220, 235},
+            Teal = {148, 226, 213},
+            Green = {166, 227, 161},
+            Yellow = {249, 226, 175},
+            Peach = {250, 179, 135},
+            Maroon = {235, 160, 172},
+            Red = {243, 139, 168},
+            Mauve = {203, 166, 247},
+            Pink = {245, 194, 231},
+            Flamingo = {242, 205, 205},
+            Rosewater = {245, 224, 220}
         }
     }
 
@@ -395,6 +412,36 @@ do
         return DefaultSettings, (Existed and Invalid)
     end
 
+    local function FormatThemeJSON(Theme)
+        local Lines = {
+            '{',
+            ('\t"Font": "%s",'):format(Theme.Font),
+            ('\t"MonoFont": "%s",'):format(Theme.MonoFont),
+            '\t"Colors": {'
+        }
+
+        local ColorKeys = {}
+        for Key in next, Theme.Colors do
+            ColorKeys[#ColorKeys + 1] = Key
+        end
+        table.sort(ColorKeys)
+
+        for I = 1, #ColorKeys do
+            local Key = ColorKeys[I]
+            local RGB = Theme.Colors[Key]
+            local Line = ('\t\t"%s": [%d, %d, %d]'):format(Key, RGB[1], RGB[2], RGB[3])
+            if I < #ColorKeys then
+                Line = Line .. ','
+            end
+            Lines[#Lines + 1] = Line
+        end
+
+        Lines[#Lines + 1] = '\t}'
+        Lines[#Lines + 1] = '}'
+
+        return table.concat(Lines, '\n')
+    end
+
     local function LoadTheme(ThemeName)
         local Path = ('tidecaller/themes/%s.json'):format(ThemeName)
         local Existed, Invalid = false, false
@@ -418,7 +465,7 @@ do
                 if not isfolder('tidecaller/themes') then
                     makefolder('tidecaller/themes')
                 end
-                writefile(Path, HttpService:JSONEncode(DefaultTheme))
+                writefile(Path, FormatThemeJSON(DefaultTheme))
             end)
         end
 
