@@ -1703,7 +1703,7 @@ C[#C + 1] = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
             return
         end
 
-        -- Handle Up/Down arrows when palette is open and input is focused
+        -- Handle Up/Down arrows and Escape when palette is open and input is focused
         if PaletteOpen and InputBox:IsFocused() then
             if Input.KeyCode == Enum.KeyCode.Up then
                 NavigateUp()
@@ -1717,6 +1717,8 @@ C[#C + 1] = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
                 HeldKey = Enum.KeyCode.Down
                 HoldStartTime = tick()
                 RepeatActive = false
+            elseif Input.KeyCode == Enum.KeyCode.Escape then
+                ClosePalette()
             end
         end
     elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
