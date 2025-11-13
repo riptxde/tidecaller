@@ -607,20 +607,13 @@ local UIAssets = {
                             Name = 'AccentLine',
                             AnchorPoint = Vector2.new(0.5, 0),
                             Position = UDim2.new(0.5, 0, 0, 0),
-                            Size = UDim2.new(1, -12, 0, 5),
+                            Size = UDim2.new(1, -12, 0, 4),
+                            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                             BorderSizePixel = 0,
                             ZIndex = BaseZIndex + 2
                         },
                         {
-                            {'UIGradient', {
-                                Color = ColorSequence.new({
-                                    ColorSequenceKeypoint.new(0, Settings.Colors.Mantle),
-                                    ColorSequenceKeypoint.new(0.4, Settings.Colors.Blue),
-                                    ColorSequenceKeypoint.new(0.5, Settings.Colors.Blue),
-                                    ColorSequenceKeypoint.new(0.6, Settings.Colors.Blue),
-                                    ColorSequenceKeypoint.new(1, Settings.Colors.Mantle)
-                                })
-                            }}
+                            {'UIGradient', {}} -- Color sequence set later
                         }
                     },
                     {
@@ -755,18 +748,13 @@ local UIAssets = {
                     Name = 'AccentBar',
                     AnchorPoint = Vector2.new(0.5, 1),
                     Position = UDim2.new(0.5, 0, 1, 12),
-                    Size = UDim2.new(1, -30, 0, 5),
+                    Size = UDim2.new(1, 0, 0, 4),
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                     BorderSizePixel = 0,
                     ZIndex = BaseZIndex + 2
                 },
                 {
-                    {'UIGradient', {
-                        Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Settings.Colors.Surface0),
-                            ColorSequenceKeypoint.new(0.5, Settings.Colors.Blue),
-                            ColorSequenceKeypoint.new(1, Settings.Colors.Surface0)
-                        })
-                    }}
+                    {'UIGradient', {} } -- Color sequence set later
                 }
             },
             {'TextLabel', {
@@ -1164,9 +1152,9 @@ local function Notify(Type, Title, Message, Duration)
         local AccentGradient = AccentBar:FindFirstChild('UIGradient')
         if AccentGradient then
             AccentGradient.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Settings.Colors.Surface0),
+                ColorSequenceKeypoint.new(0, Settings.Colors.Base),
                 ColorSequenceKeypoint.new(0.5, AccentColor),
-                ColorSequenceKeypoint.new(1, Settings.Colors.Surface0)
+                ColorSequenceKeypoint.new(1, Settings.Colors.Base)
             })
         end
     end
@@ -1663,11 +1651,11 @@ C[#C + 1] = PreRender:Connect(function(DeltaTime)
     local RightColor = NextColor:Lerp(NextNextColor, Alpha)
 
     AccentLineTopGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Settings.Colors.Mantle),
+        ColorSequenceKeypoint.new(0, Settings.Colors.Crust),
         ColorSequenceKeypoint.new(0.4, LeftColor),
         ColorSequenceKeypoint.new(0.5, CenterColor),
         ColorSequenceKeypoint.new(0.6, RightColor),
-        ColorSequenceKeypoint.new(1, Settings.Colors.Mantle)
+        ColorSequenceKeypoint.new(1, Settings.Colors.Crust)
     })
 
     -- Handle delayed repeat for navigation keys
