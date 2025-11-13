@@ -3414,9 +3414,7 @@ RegisterCommand({
     Aliases = {},
     Description = 'Destroys and cleans up Tidecaller completely',
     Execute = function()
-        print('[Tidecaller] Quitting...')
         Cleanup()
-        print('[Tidecaller] Quit and cleanup complete')
     end
 })
 
