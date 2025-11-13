@@ -2205,8 +2205,35 @@ RegisterArgType('keycode', {
         return nil
     end,
     GetSuggestions = function(Query, PreviousArgs)
-        local Keycodes = {}
+        local MatchedKeycodes = {}
         local QueryLower = Query:lower()
+
+        -- Override display strings for shifted/special KeyCodes
+        local KeyStringOverrides = {
+            Hash = '#', Dollar = '$', Percent = '%', Ampersand = '&',
+            Asterisk = '*', Plus = '+', At = '@', Caret = '^',
+            Underscore = '_', Colon = ':', Question = '?',
+            Tilde = '~', Pipe = '|',
+            LeftParenthesis = '(', RightParenthesis = ')',
+            LessThan = '<', GreaterThan = '>',
+            LeftCurly = '{', RightCurly = '}',
+            QuotedDouble = '"', BackSlash = '\\'
+        }
+
+        local function CalculateScore(Text)
+            local LowerText = Text:lower()
+            local StartPos = LowerText:find(QueryLower, 1, true)
+
+            if not StartPos then
+                return INF
+            end
+
+            local PositionScore = StartPos
+            local LengthRatio = #QueryLower / #Text
+            local BaseScore = PositionScore - (LengthRatio * 0.5)
+
+            return BaseScore
+        end
 
         -- Get all KeyCode enum items
         local AllKeyCodes = Enum.KeyCode:GetEnumItems()
@@ -2214,27 +2241,63 @@ RegisterArgType('keycode', {
             local KeyCode = AllKeyCodes[I]
             local KeyName = KeyCode.Name
 
-            -- Get the string representation for this keycode
-            local KeyString = UserInputService:GetStringForKeyCode(KeyCode)
+            -- Get the display string (override or from Roblox)
+            local OverrideString = KeyStringOverrides[KeyName]
+            local KeyString = OverrideString or UserInputService:GetStringForKeyCode(KeyCode)
 
             -- Exclude Escape key and keycodes with no string
             if KeyName ~= 'Escape' and KeyString ~= '' then
+                -- Calculate score for KeyName
+                local BestScore = CalculateScore(KeyName)
+
+                -- Calculate score for KeyString
+                local KeyStringScore = CalculateScore(KeyString)
+                if KeyStringScore < BestScore then
+                    BestScore = KeyStringScore
+                end
+
                 -- Filter by query
-                if QueryLower == '' or KeyName:lower():find(QueryLower, 1, true) ~= nil then
-                    Keycodes[#Keycodes + 1] = KeyName
+                if QueryLower == '' or BestScore < INF then
+                    MatchedKeycodes[#MatchedKeycodes + 1] = {
+                        Name = KeyName,
+                        Score = QueryLower == '' and I or BestScore
+                    }
                 end
             end
         end
 
-        return Keycodes
+        -- Sort by score (lower is better)
+        table.sort(MatchedKeycodes, function(A, B)
+            return A.Score < B.Score
+        end)
+
+        -- Extract just the names
+        local Results = {}
+        for I = 1, #MatchedKeycodes do
+            Results[I] = MatchedKeycodes[I].Name
+        end
+
+        return Results
     end,
     BuildPaletteItem = function(KeyName)
         local Padding = Create('UIPadding', {
             PaddingLeft = UDim.new(0, 12)
         })
 
-        -- Get the string representation for this keycode
-        local KeyString = UserInputService:GetStringForKeyCode(Enum.KeyCode[KeyName])
+        -- Override display strings for shifted/special KeyCodes (must match GetSuggestions)
+        local KeyStringOverrides = {
+            Hash = '#', Dollar = '$', Percent = '%', Ampersand = '&',
+            Asterisk = '*', Plus = '+', At = '@', Caret = '^',
+            Underscore = '_', Colon = ':', Question = '?',
+            Tilde = '~', Pipe = '|',
+            LeftParenthesis = '(', RightParenthesis = ')',
+            LessThan = '<', GreaterThan = '>',
+            LeftCurly = '{', RightCurly = '}',
+            QuotedDouble = '"', BackSlash = '\\'
+        }
+
+        -- Get the display string (override or from Roblox)
+        local DisplayText = KeyStringOverrides[KeyName] or UserInputService:GetStringForKeyCode(Enum.KeyCode[KeyName])
 
         -- Container for horizontal layout
         local Container = Create('Frame', {
@@ -2285,7 +2348,7 @@ RegisterArgType('keycode', {
             TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
             AutomaticSize = Enum.AutomaticSize.X,
-            Text = KeyString,
+            Text = DisplayText,
             TextColor3 = Settings.Colors.Lavender,
             Parent = KeyStringBlock
         })
