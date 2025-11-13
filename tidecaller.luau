@@ -3221,7 +3221,7 @@ RegisterCommand({
             return
         end
 
-        Root.CFrame = TPPart.CFrame
+        Root.CFrame = CFrame.new(TPPart.Position) + Vector3.new(0,0,4.5)
 
         -- Reset velocities
         local Descendants = Char:GetDescendants()
@@ -3246,7 +3246,7 @@ RegisterCommand({
     Execute = function(X, Y, Z)
         local Char, Root = GetLocalPlayerInfo()
         if not Root then
-            Notify('Error', 'Goto', 'Character or HumanoidRootPart not found')
+            Notify('Error', 'Teleport', 'Character or HumanoidRootPart not found')
             return
         end
 
