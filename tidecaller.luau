@@ -2192,6 +2192,176 @@ RegisterArgType('player', {
     end
 })
 
+RegisterArgType('keycode', {
+    Color = Settings.Colors.Lavender,
+    GetValue = function(Str)
+        -- Validate the keycode exists
+        local Success = pcall(function()
+            local _ = Enum.KeyCode[Str]
+        end)
+        if Success then
+            return Str
+        end
+        return nil
+    end,
+    GetSuggestions = function(Query, PreviousArgs)
+        local Keycodes = {}
+        local QueryLower = Query:lower()
+
+        -- Get all KeyCode enum items
+        local AllKeyCodes = Enum.KeyCode:GetEnumItems()
+        for I = 1, #AllKeyCodes do
+            local KeyCode = AllKeyCodes[I]
+            local KeyName = KeyCode.Name
+
+            -- Get the string representation for this keycode
+            local KeyString = UserInputService:GetStringForKeyCode(KeyCode)
+
+            -- Exclude Escape key and keycodes with no string
+            if KeyName ~= 'Escape' and KeyString ~= '' then
+                -- Filter by query
+                if QueryLower == '' or KeyName:lower():find(QueryLower, 1, true) ~= nil then
+                    Keycodes[#Keycodes + 1] = KeyName
+                end
+            end
+        end
+
+        return Keycodes
+    end,
+    BuildPaletteItem = function(KeyName)
+        local Padding = Create('UIPadding', {
+            PaddingLeft = UDim.new(0, 12)
+        })
+
+        -- Get the string representation for this keycode
+        local KeyString = UserInputService:GetStringForKeyCode(Enum.KeyCode[KeyName])
+
+        -- Container for horizontal layout
+        local Container = Create('Frame', {
+            Name = 'Container',
+            Position = UDim2.new(0, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            Size = UDim2.new(1, 0, 0, 0),
+            BackgroundTransparency = 1
+        })
+
+        Create('UIListLayout', {
+            FillDirection = Enum.FillDirection.Horizontal,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 8),
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            Parent = Container
+        })
+
+        -- Mono block for key string
+        local KeyStringBlock = Create('Frame', {
+            Name = 'KeyStringBlock',
+            Size = UDim2.new(0, 0, 0, 24),
+            BackgroundColor3 = Settings.Colors.Crust,
+            BorderSizePixel = 0,
+            AutomaticSize = Enum.AutomaticSize.X,
+            LayoutOrder = 1,
+            Parent = Container
+        })
+
+        Create('UICorner', {
+            CornerRadius = UDim.new(0, 4),
+            Parent = KeyStringBlock
+        })
+
+        Create('UIPadding', {
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            PaddingTop = UDim.new(0, 2),
+            PaddingBottom = UDim.new(0, 2),
+            Parent = KeyStringBlock
+        })
+
+        Create('TextLabel', {
+            Name = 'KeyStringLabel',
+            Size = UDim2.new(0, 0, 1, 0),
+            BackgroundTransparency = 1,
+            FontFace = Settings.MonoFonts.Bold,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutomaticSize = Enum.AutomaticSize.X,
+            Text = KeyString,
+            TextColor3 = Settings.Colors.Lavender,
+            Parent = KeyStringBlock
+        })
+
+        -- Key name label (non-mono)
+        Create('TextLabel', {
+            Name = 'KeyNameLabel',
+            Size = UDim2.new(0, 0, 1, 0),
+            BackgroundTransparency = 1,
+            FontFace = Settings.Fonts.Regular,
+            Text = KeyName,
+            TextColor3 = Settings.Colors.Subtext1,
+            TextSize = 16,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutomaticSize = Enum.AutomaticSize.X,
+            LayoutOrder = 2,
+            Parent = Container
+        })
+
+        return KeyName, {Padding, Container}
+    end
+})
+
+RegisterArgType('theme', {
+    Color = Settings.Colors.Mauve,
+    GetValue = function(Str)
+        return Str
+    end,
+    GetSuggestions = function(Query, PreviousArgs)
+        local ThemesPath = 'tidecaller/themes'
+        local Themes = {}
+
+        -- Get all theme files from the filesystem
+        if type(isfolder) == 'function' and type(listfiles) == 'function' and isfolder(ThemesPath) then
+            local Files = listfiles(ThemesPath)
+            for I = 1, #Files do
+                local File = Files[I]
+                -- Extract theme name from file path (remove path and .json extension)
+                local ThemeName = File:match('([^/\\]+)%.json$')
+                if ThemeName then
+                    local QueryLower = Query:lower()
+                    if QueryLower == '' or ThemeName:lower():find(QueryLower, 1, true) ~= nil then
+                        Themes[#Themes + 1] = ThemeName
+                    end
+                end
+            end
+        end
+
+        -- Sort alphabetically
+        table.sort(Themes, function(A, B)
+            return A:lower() < B:lower()
+        end)
+
+        return Themes
+    end,
+    BuildPaletteItem = function(ThemeName)
+        local Padding = Create('UIPadding', {
+            PaddingLeft = UDim.new(0, 12)
+        })
+
+        local ThemeLabel = Create('TextLabel', {
+            Name = 'ThemeLabel',
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            FontFace = Settings.MonoFonts.Bold,
+            Text = ThemeName,
+            TextColor3 = Settings.Colors.Subtext0,
+            TextSize = 16,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center
+        })
+
+        return ThemeName, {Padding, ThemeLabel}
+    end
+})
+
 --/ Commands /--
 RegisterCommand({
     Category = 'CHARACTER',
@@ -3242,6 +3412,39 @@ RegisterCommand({
         print('[Tidecaller] Quitting...')
         Cleanup()
         print('[Tidecaller] Quit and cleanup complete')
+    end
+})
+
+RegisterCommand({
+    Category = 'SETTINGS',
+    Name = 'changehotkey',
+    Args = {{'keycode', 'hotkey'}},
+    Aliases = {},
+    Description = 'Change the hotkey to open the command palette',
+    Execute = function(Hotkey)
+        -- TODO: Implement functionality
+    end
+})
+
+RegisterCommand({
+    Category = 'SETTINGS',
+    Name = 'changeprefix',
+    Args = {{'string', 'prefix'}},
+    Aliases = {},
+    Description = 'Change the command prefix for commands run via in-game chat and the input box',
+    Execute = function(Prefix)
+        -- TODO: Implement functionality
+    end
+})
+
+RegisterCommand({
+    Category = 'SETTINGS',
+    Name = 'changetheme',
+    Args = {{'theme', 'theme'}},
+    Aliases = {},
+    Description = 'Change the UI theme',
+    Execute = function(Theme)
+        -- TODO: Implement functionality
     end
 })
 
