@@ -320,36 +320,70 @@ do
         Theme = 'catppuccin_mocha'
     }
 
-    local DefaultTheme = {
-        Font = 'rbxasset://fonts/families/BuilderSans.json',
-        MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
-        Colors = {
-            Base = {30, 30, 46},
-            Mantle = {24, 24, 37},
-            Crust = {17, 17, 27},
-            Surface0 = {49, 50, 68},
-            Surface1 = {69, 71, 90},
-            Surface2 = {88, 91, 112},
-            Overlay0 = {108, 112, 134},
-            Overlay1 = {127, 132, 156},
-            Overlay2 = {147, 153, 178},
-            Text = {205, 214, 244},
-            Subtext1 = {186, 194, 222},
-            Subtext0 = {166, 173, 200},
-            Blue = {137, 180, 250},
-            Lavender = {180, 190, 254},
-            Sapphire = {116, 199, 236},
-            Sky = {137, 220, 235},
-            Teal = {148, 226, 213},
-            Green = {166, 227, 161},
-            Yellow = {249, 226, 175},
-            Peach = {250, 179, 135},
-            Maroon = {235, 160, 172},
-            Red = {243, 139, 168},
-            Mauve = {203, 166, 247},
-            Pink = {245, 194, 231},
-            Flamingo = {242, 205, 205},
-            Rosewater = {245, 224, 220}
+    local DefaultThemes = {
+        catppuccin_mocha = {
+            Font = 'rbxasset://fonts/families/BuilderSans.json',
+            MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
+            Colors = {
+                Base = {30, 30, 46},
+                Mantle = {24, 24, 37},
+                Crust = {17, 17, 27},
+                Surface0 = {49, 50, 68},
+                Surface1 = {69, 71, 90},
+                Surface2 = {88, 91, 112},
+                Overlay0 = {108, 112, 134},
+                Overlay1 = {127, 132, 156},
+                Overlay2 = {147, 153, 178},
+                Text = {205, 214, 244},
+                Subtext1 = {186, 194, 222},
+                Subtext0 = {166, 173, 200},
+                Blue = {137, 180, 250},
+                Lavender = {180, 190, 254},
+                Sapphire = {116, 199, 236},
+                Sky = {137, 220, 235},
+                Teal = {148, 226, 213},
+                Green = {166, 227, 161},
+                Yellow = {249, 226, 175},
+                Peach = {250, 179, 135},
+                Maroon = {235, 160, 172},
+                Red = {243, 139, 168},
+                Mauve = {203, 166, 247},
+                Pink = {245, 194, 231},
+                Flamingo = {242, 205, 205},
+                Rosewater = {245, 224, 220}
+            }
+        },
+        catppuccin_latte = {
+            Font = 'rbxasset://fonts/families/BuilderSans.json',
+            MonoFont = 'rbxasset://fonts/families/Inconsolata.json',
+            Colors = {
+                Base = {239, 241, 245},
+                Mantle = {230, 233, 239},
+                Crust = {220, 224, 232},
+                Surface0 = {204, 208, 218},
+                Surface1 = {188, 192, 204},
+                Surface2 = {172, 176, 190},
+                Overlay0 = {156, 160, 176},
+                Overlay1 = {140, 143, 161},
+                Overlay2 = {124, 127, 147},
+                Text = {76, 79, 105},
+                Subtext1 = {92, 95, 119},
+                Subtext0 = {108, 111, 133},
+                Blue = {30, 102, 245},
+                Lavender = {114, 135, 253},
+                Sapphire = {32, 159, 181},
+                Sky = {4, 165, 229},
+                Teal = {23, 146, 153},
+                Green = {64, 160, 43},
+                Yellow = {223, 142, 29},
+                Peach = {254, 100, 11},
+                Maroon = {230, 69, 83},
+                Red = {210, 15, 57},
+                Mauve = {136, 57, 239},
+                Pink = {234, 118, 203},
+                Flamingo = {221, 120, 120},
+                Rosewater = {220, 138, 120}
+            }
         }
     }
 
@@ -446,6 +480,27 @@ do
         local Path = ('tidecaller/themes/%s.json'):format(ThemeName)
         local Existed, Invalid = false, false
 
+        -- First, ensure all default themes exist
+        if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' and type(isfile) == 'function' then
+            pcall(function()
+                if not isfolder('tidecaller') then
+                    makefolder('tidecaller')
+                end
+                if not isfolder('tidecaller/themes') then
+                    makefolder('tidecaller/themes')
+                end
+
+                -- Create all default themes if they don't exist
+                for Name, Theme in next, DefaultThemes do
+                    local ThemePath = ('tidecaller/themes/%s.json'):format(Name)
+                    if not isfile(ThemePath) then
+                        writefile(ThemePath, FormatThemeJSON(Theme))
+                    end
+                end
+            end)
+        end
+
+        -- Now try to load the requested theme
         if type(isfile) == 'function' and type(readfile) == 'function' and isfile(Path) then
             Existed = true
             local Success, Data = pcall(function()
@@ -457,19 +512,9 @@ do
             Invalid = true
         end
 
-        if type(makefolder) == 'function' and type(writefile) == 'function' and type(isfolder) == 'function' then
-            pcall(function()
-                if not isfolder('tidecaller') then
-                    makefolder('tidecaller')
-                end
-                if not isfolder('tidecaller/themes') then
-                    makefolder('tidecaller/themes')
-                end
-                writefile(Path, FormatThemeJSON(DefaultTheme))
-            end)
-        end
-
-        return DefaultTheme, (Existed and Invalid)
+        -- Return the appropriate default theme based on name, or catppuccin_mocha as fallback
+        local FallbackTheme = DefaultThemes[ThemeName] or DefaultThemes.catppuccin_mocha
+        return FallbackTheme, (Existed and Invalid)
     end
 
     local SettingsData, SettingsInvalid = LoadSettings()
