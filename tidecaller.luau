@@ -283,7 +283,7 @@ local function GetLocalPlayerInfo()
     local Root = Char:FindFirstChild('HumanoidRootPart') or Char:FindFirstChild('Torso') or Char:FindFirstChild('UpperTorso')
     local Humanoid = Char:FindFirstChildOfClass('Humanoid')
     local Head = Char:FindFirstChild('Head')
-    local Part = Char:FindFirstChildWhichIsA('BasePart')
+    local Part = Root or Head or Char:FindFirstChildWhichIsA('BasePart')
 
     return Char, Root, Humanoid, Head, Part
 end
@@ -301,7 +301,7 @@ local function GetTargetPlayerInfo(Player)
     local PRoot = PChar:FindFirstChild('HumanoidRootPart') or PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso')
     local PHumanoid = PChar:FindFirstChildOfClass('Humanoid')
     local PHead = PChar:FindFirstChild('Head')
-    local PPart = PChar:FindFirstChildWhichIsA('BasePart')
+    local PPart = PRoot or PHead or PChar:FindFirstChildWhichIsA('BasePart')
 
     return Player, PChar, PRoot, PHumanoid, PHead, PPart
 end
