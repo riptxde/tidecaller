@@ -1,6 +1,6 @@
-- [Home](/)
-- [Settings](/settings.md)
-- [Themes](/themes.md)
+- [**Home**](/)
+- [**Settings**](/settings.md)
+- [**Themes**](/themes.md)
 
 - **Plugins**
   - [Overview](/plugins/README.md)
