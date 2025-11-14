@@ -1,0 +1,13 @@
+- [Home](/)
+- [Settings](/settings.md)
+- [Themes](/themes.md)
+
+- **Plugins**
+  - [Overview](/plugins/README.md)
+  - [Getting Started](/plugins/getting-started.md)
+  - [Custom Argument Types](/plugins/argument-types.md)
+  - [API Reference](/plugins/api-reference.md)
+  - **Examples**
+    - [Simple Command (tgoto)](/plugins/examples/tgoto.md)
+    - [Custom Args (gotopoint)](/plugins/examples/gotopoint.md)
+    - [Advanced (waypoints)](/plugins/examples/waypoints.md)
