@@ -21,3 +21,6 @@ If you're looking for a fully-featured admin script with a comprehensive set of 
 ## Developers
 
 - **[riptxde](https://github.com/riptxde/)** - Creator and maintainer
+
+## Contributing
+Simply [open a pull request](https://github.com/riptxde/tidecaller/pulls).
