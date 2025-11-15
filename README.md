@@ -1,6 +1,10 @@
 # Tidecaller
 
+<a href="https://discord.gg/FNNeRx7U2k"><img src="https://github.com/user-attachments/assets/69514f2f-dffa-4155-88c6-650d57293bca" height="120" alt="PACE Logo" align="right"/></a>
+
 > An admin script for roblox scripts executors, featuring a themable command palette, auto-complete, and a highly-extensible plugin system designed for luau developers.
+
+To look at our list of community themes and plugins, or to chat with other users, please [join our Discord Server](https://discord.gg/FNNeRx7U2k).
 
 ## Script
 
