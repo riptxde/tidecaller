@@ -8,6 +8,10 @@
 loadstring(game:HttpGet('https://raw.githubusercontent.com/riptxde/tidecaller/master/tidecaller.luau'))()
 ```
 
+## Preview
+
+https://github.com/user-attachments/assets/fa7ded58-872d-47f4-aecb-504112895980
+
 ## Usage
 
 For complete documentation, including how to use Tidecaller, plugin development, and theming, visit the [Tidecaller Documentation](https://riptxde.github.io/tidecaller/).
