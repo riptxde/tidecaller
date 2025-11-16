@@ -2533,7 +2533,7 @@ do
     local function CalculateMoveDirection()
         local Camera = workspace.CurrentCamera
         local CameraCFrame = Camera.CFrame
-        local MoveDirection = Vector3.new(0, 0, 0)
+        local MoveDirection = Vector3.zero
 
         -- Forward/Backward (relative to camera, includes vertical component)
         if MoveW then
@@ -2722,7 +2722,8 @@ do
             for I = 1, #Descendants do
                 local Descendant = Descendants[I]
                 if Descendant:IsA('BasePart') then
-                    Descendant.Velocity = Vector3.new(0, 0, 0)
+                    Descendant.Velocity = Vector3.zero
+                    Descendant.RotVelocity = Vector3.zero
                 end
             end
         end
@@ -3225,15 +3226,15 @@ RegisterCommand({
             return
         end
 
-        Root.CFrame = CFrame.new(TPPart.Position) + Vector3.new(0,0,4.5)
+        Root.CFrame = CFrame.new(TPPart.Position) + Vector3.new(0, 0, 4.5)
 
         -- Reset velocities
         local Descendants = Char:GetDescendants()
         for I = 1, #Descendants do
             local BasePart = Descendants[I]
             if BasePart:IsA('BasePart') then
-                BasePart.Velocity = Vector3.new(0, 0, 0)
-                BasePart.RotVelocity = Vector3.new(0, 0, 0)
+                BasePart.Velocity = Vector3.zero
+                BasePart.RotVelocity = Vector3.zero
             end
         end
 
@@ -3262,8 +3263,8 @@ RegisterCommand({
         for I = 1, #Descendants do
             local BasePart = Descendants[I]
             if BasePart:IsA('BasePart') then
-                BasePart.Velocity = Vector3.new(0, 0, 0)
-                BasePart.RotVelocity = Vector3.new(0, 0, 0)
+                BasePart.Velocity = Vector3.zero
+                BasePart.RotVelocity = Vector3.zero
             end
         end
 
