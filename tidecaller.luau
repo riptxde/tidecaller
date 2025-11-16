@@ -2420,72 +2420,76 @@ RegisterCommand({
 })
 
 -- Noclip
-local Noclipping = false
+do
+    local Noclipping = false
 
-RegisterCommand({
-    Category = 'CHARACTER',
-    Name = 'noclip',
-    Args = {},
-    Aliases = {},
-    Description = 'Walk through walls',
-    Execute = function()
-        if Noclipping then
-            Notify('Warning', 'Noclip', 'Already noclipping')
-            return
-        end
-
-        local Char, _, Humanoid = GetLocalPlayerInfo()
-        if not Humanoid then
-            Notify('Error', 'Noclip', 'Character or Humanoid not found')
-            return
-        end
-
-        Noclipping = true
-
-        sethiddenproperty(Humanoid, 'OverrideDefaultCollisions', true)
-
-        local Descendants = Char:GetDescendants()
-        for I = 1, #Descendants do
-            local Descendant = Descendants[I]
-            if Descendant:IsA('BasePart') and not Descendant.Parent:IsA('Accoutrement') then
-                Descendant.CanCollide = false
+    RegisterCommand({
+        Category = 'CHARACTER',
+        Name = 'noclip',
+        Args = {},
+        Aliases = {},
+        Description = 'Walk through walls',
+        Execute = function()
+            if Noclipping then
+                Notify('Warning', 'Noclip', 'Already noclipping')
+                return
             end
-        end
 
-        Notify('Success', 'Noclip', 'Noclip enabled')
-    end
-})
+            local Char, _, Humanoid = GetLocalPlayerInfo()
+            if not Humanoid then
+                Notify('Error', 'Noclip', 'Character or Humanoid not found')
+                return
+            end
 
-RegisterCommand({
-    Category = 'CHARACTER',
-    Name = 'clip',
-    Args = {},
-    Aliases = {},
-    Description = 'Disable noclip',
-    Execute = function()
-        if not Noclipping then
-            Notify('Warning', 'Clip', 'Not currently noclipping')
-            return
-        end
+            Noclipping = true
 
-        Noclipping = false
-
-        local Char, _, Humanoid = GetLocalPlayerInfo()
-        if Humanoid then
-            sethiddenproperty(Humanoid, 'OverrideDefaultCollisions', false)
+            sethiddenproperty(Humanoid, 'OverrideDefaultCollisions', true)
 
             local Descendants = Char:GetDescendants()
             for I = 1, #Descendants do
                 local Descendant = Descendants[I]
                 if Descendant:IsA('BasePart') and not Descendant.Parent:IsA('Accoutrement') then
-                    Descendant.CanCollide = true
+                    Descendant.CanCollide = false
                 end
             end
-        end
 
-        Notify('Success', 'Clip', 'Noclip disabled')
-    end
-})
+            Notify('Success', 'Noclip', 'Noclip enabled')
+        end
+    })
+
+    RegisterCommand({
+        Category = 'CHARACTER',
+        Name = 'clip',
+        Args = {},
+        Aliases = {},
+        Description = 'Disable noclip',
+        Execute = function()
+            if not Noclipping then
+                Notify('Warning', 'Clip', 'Not currently noclipping')
+                return
+            end
+
+            Noclipping = false
+
+            local Char, _, Humanoid = GetLocalPlayerInfo()
+            if Humanoid then
+                sethiddenproperty(Humanoid, 'OverrideDefaultCollisions', false)
+
+                local Descendants = Char:GetDescendants()
+                for I = 1, #Descendants do
+                    local Descendant = Descendants[I]
+                    if Descendant:IsA('BasePart') and not Descendant.Parent:IsA('Accoutrement') then
+                        Descendant.CanCollide = true
+                    end
+                end
+
+                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+            end
+
+            Notify('Success', 'Clip', 'Noclip disabled')
+        end
+    })
+end
 
 RegisterCommand({
     Category = 'CHARACTER',
