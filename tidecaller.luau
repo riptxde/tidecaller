@@ -416,7 +416,9 @@ do
     local SettingsData = DefaultSettings
     local SettingsInvalid = false
 
+    local SettingsFileExists = false
     if type(isfile) == 'function' and type(readfile) == 'function' and isfile('tidecaller/settings.json') then
+        SettingsFileExists = true
         local Success, Data = pcall(function()
             return HttpService:JSONDecode(readfile('tidecaller/settings.json'))
         end)
@@ -425,10 +427,7 @@ do
             SettingsData = Data
         else
             SettingsInvalid = Success
-            SaveSettings()
         end
-    else
-        SaveSettings()
     end
 
     -- Ensure theme folders exist and write default themes
@@ -496,6 +495,11 @@ do
         Medium = Font.new(ThemeData.MonoFont, Enum.FontWeight.Medium, Enum.FontStyle.Normal),
         Bold = Font.new(ThemeData.MonoFont, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
     }
+
+    -- Save settings if file doesn't exist or was invalid
+    if not SettingsFileExists or SettingsInvalid then
+        SaveSettings()
+    end
 end
 
 local BaseZIndex = 1000
