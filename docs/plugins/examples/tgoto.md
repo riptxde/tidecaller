@@ -58,7 +58,6 @@ repeat task.wait() until G.Tidecaller and G.Tidecaller.Loaded
 -- These give us access to plugin functionality
 local RegisterArgType = G.Tidecaller.RegisterArgType
 local RegisterCommand = G.Tidecaller.RegisterCommand
-local RegisterCategory = G.Tidecaller.RegisterCategory
 local GetLocalPlayerInfo = G.Tidecaller.GetLocalPlayerInfo
 local GetTargetPlayerInfo = G.Tidecaller.GetTargetPlayerInfo
 local Colors = G.Tidecaller.Colors

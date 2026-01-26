@@ -53,7 +53,6 @@ repeat task.wait() until G.Tidecaller and G.Tidecaller.Loaded
 -- Access API functions
 local RegisterArgType = G.Tidecaller.RegisterArgType
 local RegisterCommand = G.Tidecaller.RegisterCommand
-local RegisterCategory = G.Tidecaller.RegisterCategory
 local GetLocalPlayerInfo = G.Tidecaller.GetLocalPlayerInfo
 local GetTargetPlayerInfo = G.Tidecaller.GetTargetPlayerInfo
 local Colors = G.Tidecaller.Colors
@@ -82,7 +81,6 @@ Plugins have access to these functions:
 |----------|---------|
 | `RegisterCommand` | Register a new command |
 | `RegisterArgType` | Create a custom argument type |
-| `RegisterCategory` | Define a command category |
 | `GetLocalPlayerInfo` | Get local player's character info |
 | `GetTargetPlayerInfo` | Get target player's character info |
 | `Notify` | Show notifications |

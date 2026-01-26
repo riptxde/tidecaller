@@ -283,45 +283,6 @@ RegisterArgType('direction', {
 
 ---
 
-### RegisterCategory
-
-Registers a command category (optional - auto-created by RegisterCommand).
-
-#### Signature
-
-```lua
-RegisterCategory('CATEGORY_NAME', {
-    Order = number
-})
-```
-
-#### Parameters
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| Name | string | Yes (first param) | Category name (UPPERCASE) |
-| Order | number | No | Display order (lower = first) |
-
-#### Example
-
-```lua
-RegisterCategory('TELEPORT', {
-    Order = 1
-})
-
-RegisterCategory('UTILITY', {
-    Order = 2
-})
-```
-
-#### Notes
-
-- Rarely needed - categories auto-created by RegisterCommand
-- Useful for controlling display order
-- Default order based on creation time
-
----
-
 ### GetLocalPlayerInfo
 
 Gets information about the local player's character.

@@ -18,7 +18,6 @@ G.Tidecaller = { -- API functions and resources to be set later
     Fonts = nil,
     RegisterArgType = nil,
     RegisterCommand = nil,
-    RegisterCategory = nil,
     GetLocalPlayerInfo = nil,
     GetTargetPlayerInfo = nil,
     Loaded = false,
@@ -512,7 +511,6 @@ G.Tidecaller.MonoFonts = Settings.MonoFonts
 --/ Extensible Command System /--
 local ArgTypes = {}
 local Commands = {}
-local Categories = {}
 
 local RebuildCommandList -- Forward declaration
 
@@ -525,20 +523,6 @@ local function RegisterArgType(Name, Config)
     --         Returns: The value to store, and array of instances to parent to the base item
     -- }
     ArgTypes[Name] = Config
-    RebuildCommandList()
-end
-
-local function RegisterCategory(Name, Config)
-    -- Config structure:
-    -- {
-    --     Order = number (optional, for sorting)
-    --     CustomView = {
-    --         BuildPaletteItem = function(Data, Order) -> Frame,
-    --         GetSuggestions = function(Query, CommandData, PreviousArgs) -> {Suggestions},
-    --         GetValue = function(PaletteItem) -> string
-    --     } (optional)
-    -- }
-    Categories[Name] = Config or {}
     RebuildCommandList()
 end
 
@@ -579,7 +563,6 @@ end
 -- Expose registration functions to API
 G.Tidecaller.RegisterArgType = RegisterArgType
 G.Tidecaller.RegisterCommand = RegisterCommand
-G.Tidecaller.RegisterCategory = RegisterCategory
 
 --/ UI Creation /--
 local UIAssets = {
