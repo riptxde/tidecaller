@@ -3306,7 +3306,7 @@ RegisterCommand({
     Aliases = {'rj'},
     Description = 'Rejoin the server',
     Execute = function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
         wait(0.6)
         GuiService:ClearError()
     end
@@ -3351,7 +3351,7 @@ RegisterCommand({
                     Notif('Error', 'Serverhop', 'No valid servers found')
                 end
 
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, ValidJobIds[Rand:NextInteger(1, #ValidJobIds)], LP)
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, ValidJobIds[Rand:NextInteger(1, #ValidJobIds)])
                 wait(0.6)
                 GuiService:ClearError()
             end)
@@ -3382,7 +3382,7 @@ RegisterCommand({
     Aliases = {},
     Description = 'Join a server with a specific Job ID',
     Execute = function(JobId)
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, JobId, LP)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, JobId)
         wait(0.6)
         GuiService:ClearError()
     end
