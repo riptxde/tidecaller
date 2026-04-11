@@ -254,22 +254,22 @@ Always validate your inputs and handle errors:
 ```lua
 Execute = function(PlayerArg)
     -- Get player info
-    local Player, PChar, PRoot = GetTargetPlayerInfo(PlayerArg)
+    local TPlayer, TChar, TRoot = GetTargetPlayerInfo(PlayerArg)
 
     -- Check if player exists
-    if not Player then
+    if not TPlayer then
         Notify('Error', 'Command Failed', 'Player not found')
         return
     end
 
     -- Check if character exists
-    if not PChar then
+    if not TChar then
         Notify('Error', 'Command Failed', 'Player has no character')
         return
     end
 
-    -- Safe to use PRoot now
-    local Position = PRoot.Position
+    -- Safe to use TRoot now
+    local Position = TRoot.Position
     Notify('Success', 'Success', ('Player is at %.0f, %.0f, %.0f'):format(
         Position.X, Position.Y, Position.Z
     ))

@@ -112,13 +112,14 @@ RegisterCommand({
         end
 
         -- Get target player's character information
-        -- Returns: Player, PChar, PRoot, PHumanoid, PHead, PPart
-        -- Player is always returned, others are nil if character doesn't exist
-        local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(TargetPlayer)
+        -- Returns: TPlayer, TChar, TRoot, THumanoid, THead, TPart
+        -- TPlayer is always returned, others are nil if character doesn't exist
+        -- We only need TPlayer (for DisplayName) and TRoot (for CFrame), so we use _ to ignore the rest
+        local TPlayer, _, TRoot, _, _, TPart = GetTargetPlayerInfo(TargetPlayer)
 
         -- Validate that we found a valid part in target's character
-        -- PPart is the most reliable (tries Root first, then Head)
-        if not PPart then
+        -- TPart is the most reliable (tries Root first, then Head)
+        if not TPart then
             -- Show error if target player has no valid character parts
             Notify('Error', 'Tween Goto', 'Could not find a valid part in the target player\'s character')
             return  -- Exit early
@@ -134,7 +135,7 @@ RegisterCommand({
 
         -- Goal: What property to animate to what value
         -- We want to move Root's CFrame to target's position
-        local Goal = {CFrame = PRoot.CFrame}
+        local Goal = {CFrame = TRoot.CFrame}
 
         -- Create the tween
         local Tween = TweenService:Create(Root, TweenInfo, Goal)
@@ -143,9 +144,9 @@ RegisterCommand({
         Tween:Play()
 
         -- Show success notification
-        -- Use Player.DisplayName for user-friendly name
+        -- Use TPlayer.DisplayName for user-friendly name
         -- :format() substitutes %s with the player name
-        Notify('Success', 'Teleported', ('Teleporting to %s'):format(Player.DisplayName))
+        Notify('Success', 'Teleported', ('Teleporting to %s'):format(TPlayer.DisplayName))
     end
 })
 
@@ -229,16 +230,21 @@ end
 ### 5. Getting Target Player
 
 ```lua
-local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(TargetPlayer)
+-- Full signature:
+-- local TPlayer, TChar, TRoot, THumanoid, THead, TPart = GetTargetPlayerInfo(TargetPlayer)
+
+-- In this example we only need TPlayer (for DisplayName), TRoot (for CFrame), and TPart (for nil check).
+-- Use _ to ignore return values we don't need:
+local TPlayer, _, TRoot, _, _, TPart = GetTargetPlayerInfo(TargetPlayer)
 ```
 
-**Returns:**
-- `Player` - The Player instance (always returned)
-- `PChar` - Target's Character Model
-- `PRoot` - Target's HumanoidRootPart
-- `PHumanoid` - Target's Humanoid
-- `PHead` - Target's Head
-- `PPart` - First available part (PRoot -> PHead)
+**Returns (in order):**
+- `TPlayer` - The Player instance (always returned)
+- `TChar` - Target's Character Model
+- `TRoot` - Target's HumanoidRootPart
+- `THumanoid` - Target's Humanoid
+- `THead` - Target's Head
+- `TPart` - First available part (TRoot -> THead)
 
 ### 6. Error Handling Pattern
 
@@ -250,7 +256,7 @@ end
 
 // More operations...
 
-if not PPart then
+if not TPart then
     Notify('Error', 'Title', 'Different error message')
     return
 end
@@ -266,7 +272,7 @@ end
 
 ```lua
 local TweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local Goal = {CFrame = PRoot.CFrame}
+local Goal = {CFrame = TRoot.CFrame}
 local Tween = TweenService:Create(Root, TweenInfo, Goal)
 Tween:Play()
 ```

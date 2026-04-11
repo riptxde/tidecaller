@@ -110,13 +110,13 @@ RegisterCommand({
             return
         end
 
-        local _, PChar, PRoot = GetTargetPlayerInfo(Player)
-        if not PRoot then
+        local _, TChar, TRoot = GetTargetPlayerInfo(Player)
+        if not TRoot then
             Notify('Error', 'Goto', 'Could not find target player')
             return
         end
 
-        Root.CFrame = PRoot.CFrame * CFrame.new(0, Offset, 0)
+        Root.CFrame = TRoot.CFrame * CFrame.new(0, Offset, 0)
         Notify('Success', 'Teleported', ('Teleported to %s'):format(Player.DisplayName))
     end
 })
@@ -341,7 +341,7 @@ Gets information about a target player's character.
 #### Signature
 
 ```lua
-local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(PlayerInstance)
+local TPlayer, TChar, TRoot, THumanoid, THead, TPart = GetTargetPlayerInfo(PlayerInstance)
 ```
 
 #### Parameters
@@ -354,25 +354,25 @@ local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(Player
 
 | Value | Type | Description |
 |-------|------|-------------|
-| Player | Player | The input player (for convenience) |
-| PChar | Model \| nil | Target's character model |
-| PRoot | BasePart \| nil | Target's HumanoidRootPart |
-| PHumanoid | Humanoid \| nil | Target's Humanoid |
-| PHead | BasePart \| nil | Target's Head |
-| PPart | BasePart \| nil | First available part (PRoot -> PHead preference) |
+| TPlayer | Player | The input player (for convenience) |
+| TChar | Model \| nil | Target's character model |
+| TRoot | BasePart \| nil | Target's HumanoidRootPart |
+| THumanoid | Humanoid \| nil | Target's Humanoid |
+| THead | BasePart \| nil | Target's Head |
+| TPart | BasePart \| nil | First available part (TRoot -> THead preference) |
 
 #### Example
 
 ```lua
 Execute = function(TargetPlayer)
-    local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(TargetPlayer)
+    local TPlayer, TChar, TRoot, THumanoid, THead, TPart = GetTargetPlayerInfo(TargetPlayer)
 
-    if not Player then
+    if not TPlayer then
         Notify('Error', 'Invalid Player', 'Player not found')
         return
     end
 
-    if not PPart then
+    if not TPart then
         Notify('Error', 'No Character', 'Player has no character')
         return
     end
@@ -380,19 +380,19 @@ Execute = function(TargetPlayer)
     -- Teleport to target
     local Char, Root = GetLocalPlayerInfo()
     if Root then
-        Root.CFrame = PRoot.CFrame
-        Notify('Success', 'Teleported', ('Teleported to %s'):format(Player.DisplayName))
+        Root.CFrame = TRoot.CFrame
+        Notify('Success', 'Teleported', ('Teleported to %s'):format(TPlayer.DisplayName))
     end
 end
 ```
 
 #### Notes
 
-- `Player` is always returned (first value)
+- `TPlayer` is always returned (first value)
 - Other values are nil if character/parts don't exist
 - Always validate before using character parts
-- `PPart` most reliable for general use
-- `PRoot` preferred for position-based operations
+- `TPart` most reliable for general use
+- `TRoot` preferred for position-based operations
 
 ---
 

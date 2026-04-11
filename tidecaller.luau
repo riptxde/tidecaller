@@ -287,22 +287,22 @@ local function GetLocalPlayerInfo()
     return Char, Root, Humanoid, Head, Part
 end
 
-local function GetTargetPlayerInfo(Player)
-    if not Player then
+local function GetTargetPlayerInfo(TPlayer)
+    if not TPlayer then
         return nil, nil, nil, nil, nil, nil
     end
 
-    local PChar = Player.Character
-    if not PChar then
-        return Player, nil, nil, nil, nil, nil
+    local TChar = TPlayer.Character
+    if not TChar then
+        return TPlayer, nil, nil, nil, nil, nil
     end
 
-    local PRoot = PChar:FindFirstChild('HumanoidRootPart') or PChar:FindFirstChild('Torso') or PChar:FindFirstChild('UpperTorso')
-    local PHumanoid = PChar:FindFirstChildOfClass('Humanoid')
-    local PHead = PChar:FindFirstChild('Head')
-    local PPart = PRoot or PHead or PChar:FindFirstChildWhichIsA('BasePart')
+    local TRoot = TChar:FindFirstChild('HumanoidRootPart') or TChar:FindFirstChild('Torso') or TChar:FindFirstChild('UpperTorso')
+    local THumanoid = TChar:FindFirstChildOfClass('Humanoid')
+    local THead = TChar:FindFirstChild('Head')
+    local TPart = TRoot or THead or TChar:FindFirstChildWhichIsA('BasePart')
 
-    return Player, PChar, PRoot, PHumanoid, PHead, PPart
+    return TPlayer, TChar, TRoot, THumanoid, THead, TPart
 end
 
 -- Expose player info functions
@@ -2776,9 +2776,9 @@ RegisterCommand({
     Aliases = {'view'},
     Description = 'Spectate a player',
     Execute = function(Target)
-        local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(Target)
+        local TPlayer, _, TRoot, THumanoid, THead, TPart = GetTargetPlayerInfo(Target)
 
-        local CameraSubject = PHumanoid or PHead or PRoot or PPart
+        local CameraSubject = THumanoid or THead or TRoot or TPart
         if not CameraSubject then
             Notify('Error', 'Spectate', 'Could not find valid camera subject')
             return
@@ -2786,7 +2786,7 @@ RegisterCommand({
 
         workspace.CurrentCamera.CameraSubject = CameraSubject
 
-        Notify('Success', 'Spectate', ('Now spectating %s'):format(Player.DisplayName))
+        Notify('Success', 'Spectate', ('Now spectating %s'):format(TPlayer.DisplayName))
     end
 })
 
@@ -2873,13 +2873,13 @@ RegisterCommand({
             return
         end
 
-        local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(Target)
-        if not PPart then
+        local TPlayer, _, _, _, _, TPart = GetTargetPlayerInfo(Target)
+        if not TPart then
             Notify('Error', 'Goto', 'Could not find valid instance to teleport to')
             return
         end
 
-        Root.CFrame = CFrame.new(PPart.Position) + Vector3.new(0, 0, 4.5)
+        Root.CFrame = CFrame.new(TPart.Position) + Vector3.new(0, 0, 4.5)
 
         -- Reset velocities
         local Descendants = Char:GetDescendants()
@@ -2891,7 +2891,7 @@ RegisterCommand({
             end
         end
 
-        Notify('Success', 'Goto', ('Teleported to %s'):format(Player.DisplayName))
+        Notify('Success', 'Goto', ('Teleported to %s'):format(TPlayer.DisplayName))
     end
 })
 
