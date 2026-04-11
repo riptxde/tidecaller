@@ -2874,14 +2874,12 @@ RegisterCommand({
         end
 
         local Player, PChar, PRoot, PHumanoid, PHead, PPart = GetTargetPlayerInfo(Target)
-
-        local TPPart = PRoot or PHead or PPart
-        if not TPPart then
-            Notify('Error', 'Goto', 'Could not find valid teleport target')
+        if not PPart then
+            Notify('Error', 'Goto', 'Could not find valid instance to teleport to')
             return
         end
 
-        Root.CFrame = CFrame.new(TPPart.Position) + Vector3.new(0, 0, 4.5)
+        Root.CFrame = CFrame.new(PPart.Position) + Vector3.new(0, 0, 4.5)
 
         -- Reset velocities
         local Descendants = Char:GetDescendants()
