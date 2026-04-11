@@ -254,7 +254,7 @@ if not Root then
     return
 end
 
-// More operations...
+-- More operations...
 
 if not TPart then
     Notify('Error', 'Title', 'Different error message')

@@ -153,7 +153,7 @@ RegisterArgType('point', {
             TextColor3 = Colors.Text,          -- Primary text color from theme
             TextSize = 16,                     -- Larger text for main label
             TextXAlignment = Enum.TextXAlignment.Left,   -- Left-aligned
-            TextYAlignment = Enum.TextYAlignment.Center  // Vertically centered
+            TextYAlignment = Enum.TextYAlignment.Center  -- Vertically centered
         })
 
         -- Get the position for this point from our Points dictionary
@@ -165,20 +165,20 @@ RegisterArgType('point', {
         -- Create smaller label for coordinates (bottom 40% of item)
         local CoordinateLabel = Create('TextLabel', {
             Name = 'CoordinateLabel',
-            Size = UDim2.new(1, 0, 0.4, 0),    // Full width, 40% height
-            Position = UDim2.new(0, 0, 0.5, 0), // Start at 50% down (below main label)
-            BackgroundTransparency = 1,          // Invisible background
-            FontFace = MonoFonts.Regular,        // Monospace font for coordinates
-            Text = CoordinateText,               // Display formatted coordinates
-            TextColor3 = Colors.Subtext1,        // Dimmer text color for secondary info
-            TextSize = 12,                       // Smaller text for subtitle
-            TextXAlignment = Enum.TextXAlignment.Left,   // Left-aligned
-            TextYAlignment = Enum.TextYAlignment.Center  // Vertically centered
+            Size = UDim2.new(1, 0, 0.4, 0),    -- Full width, 40% height
+            Position = UDim2.new(0, 0, 0.5, 0), -- Start at 50% down (below main label)
+            BackgroundTransparency = 1,          -- Invisible background
+            FontFace = MonoFonts.Regular,        -- Monospace font for coordinates
+            Text = CoordinateText,               -- Display formatted coordinates
+            TextColor3 = Colors.Subtext1,        -- Dimmer text color for secondary info
+            TextSize = 12,                       -- Smaller text for subtitle
+            TextXAlignment = Enum.TextXAlignment.Left,   -- Left-aligned
+            TextYAlignment = Enum.TextYAlignment.Center  -- Vertically centered
         })
 
         -- Return the value and UI elements
-        // Value: What gets passed to the command (same as Suggestion here)
-        // Elements: Array of Instances to parent to the palette item
+        -- Value: What gets passed to the command (same as Suggestion here)
+        -- Elements: Array of Instances to parent to the palette item
         return Suggestion, {Padding, Label, CoordinateLabel}
     end
 })
@@ -190,10 +190,10 @@ RegisterCommand({
 
     Args = {
         -- Argument of type 'point', with name 'point_name'
-        // Third parameter: true = optional argument
-        // Fourth parameter: 'Point A' = default value
-        // User will see: <point_name: Point A>
-        // If omitted, command receives 'Point A'
+        -- Third parameter: true = optional argument
+        -- Fourth parameter: 'Point A' = default value
+        -- User will see: <point_name: Point A>
+        -- If omitted, command receives 'Point A'
         {'point', 'point_name', true, 'Point A'}
     },
 
@@ -201,13 +201,13 @@ RegisterCommand({
     Description = 'Teleports your character to a predefined point',
 
     Execute = function(PointName)
-        // PointName will be 'Point A' if user didn't provide an argument
-        // Otherwise, it's the point name the user selected
+        -- PointName will be 'Point A' if user didn't provide an argument
+        -- Otherwise, it's the point name the user selected
 
         -- Get local player's character information
         local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
 
-        // Always validate before using
+        -- Always validate before using
         if not Root then
             Notify('Error', 'Goto Point', 'Could not find your character\'s root part')
             return
@@ -216,15 +216,15 @@ RegisterCommand({
         -- Get the position for the selected point from our dictionary
         local Position = Points[PointName]
 
-        // Validate that the point exists
-        // (Should always exist since suggestions come from Points dictionary)
+        -- Validate that the point exists
+        -- (Should always exist since suggestions come from Points dictionary)
         if not Position then
             Notify('Error', 'Goto Point', 'Could not find the specified point')
             return
         end
 
         -- Teleport instantly (no animation in this example)
-        // CFrame.new creates a CFrame at the position with no rotation
+        -- CFrame.new creates a CFrame at the position with no rotation
         Root.CFrame = CFrame.new(Position)
 
         -- Show success notification with point name
