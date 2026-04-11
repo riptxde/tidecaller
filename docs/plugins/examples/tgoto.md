@@ -100,7 +100,8 @@ RegisterCommand({
         -- Get local player's character information
         -- Returns: Char, Root, Humanoid, Head, Part
         -- All values are nil if character doesn't exist
-        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        -- We only need Root here, so we use _ to ignore the rest
+        local _, Root, _, _, _ = GetLocalPlayerInfo()
 
         -- Validate that we found the local player's root part
         -- Always check for nil before using!

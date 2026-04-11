@@ -2362,7 +2362,7 @@ RegisterCommand({
     Aliases = {'speed', 'ws'},
     Description = 'Set your humanoid\'s walkspeed',
     Execute = function(Amount)
-        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        local _, _, Humanoid = GetLocalPlayerInfo()
         if not Humanoid then
             Notify('Error', 'Walk Speed', 'Character or Humanoid not found')
             return
@@ -2381,7 +2381,7 @@ RegisterCommand({
     Aliases = {'jp', 'jpower'},
     Description = 'Set your humanoid\'s jump power',
     Execute = function(Amount)
-        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        local _, _, Humanoid = GetLocalPlayerInfo()
         if not Humanoid then
             Notify('Error', 'Jump Power', 'Humanoid not found')
             return
@@ -2400,7 +2400,7 @@ RegisterCommand({
     Aliases = {'hh', 'hheight'},
     Description = 'Set your humanoid\'s hipheight',
     Execute = function(Amount)
-        local Char, Root, Humanoid = GetLocalPlayerInfo()
+        local _, _, Humanoid = GetLocalPlayerInfo()
         if not Humanoid then
             Notify('Error', 'Hip Height', 'Humanoid not found')
             return
@@ -2477,7 +2477,7 @@ RegisterCommand({
     Aliases = {'cpos'},
     Description = 'Copy your current position',
     Execute = function(UseCommas)
-        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        local _, Root, _, _, Part = GetLocalPlayerInfo()
 
         if not Root and not Part then
             Notify('Error', 'Copy Failed', 'Your character currently does not have a position')
@@ -2797,7 +2797,7 @@ RegisterCommand({
     Aliases = {'unview'},
     Description = 'Stop spectating any player',
     Execute = function()
-        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        local _, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
 
         local CameraSubject = Humanoid or Head or Root or Part
         if not CameraSubject then

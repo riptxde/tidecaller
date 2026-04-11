@@ -205,7 +205,8 @@ RegisterCommand({
         -- Otherwise, it's the point name the user selected
 
         -- Get local player's character information
-        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        -- We only need Root here, so we use _ to ignore the rest
+        local _, Root, _, _, _ = GetLocalPlayerInfo()
 
         -- Always validate before using
         if not Root then

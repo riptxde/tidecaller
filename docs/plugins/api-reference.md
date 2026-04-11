@@ -311,7 +311,8 @@ None
 
 ```lua
 Execute = function()
-    local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+    -- We only need Root here, so we use _ to ignore the rest
+    local _, Root, _, _, _ = GetLocalPlayerInfo()
 
     if not Root then
         Notify('Error', 'No Character', 'Could not find your character')
@@ -378,7 +379,7 @@ Execute = function(TargetPlayer)
     end
 
     -- Teleport to target
-    local Char, Root = GetLocalPlayerInfo()
+    local _, Root = GetLocalPlayerInfo()
     if Root then
         Root.CFrame = TRoot.CFrame
         Notify('Success', 'Teleported', ('Teleported to %s'):format(TPlayer.DisplayName))

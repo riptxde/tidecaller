@@ -300,7 +300,8 @@ RegisterCommand({
     Description = 'Saves your current position as a waypoint',
     Execute = function(WaypointName)
         -- Get local player's character information
-        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        -- We only need Root here, so we use _ to ignore the rest
+        local _, Root, _, _, _ = GetLocalPlayerInfo()
         if not Root then
             Notify('Error', 'Save Waypoint', 'Could not find your character\'s root part')
             return
@@ -381,7 +382,8 @@ RegisterCommand({
     Description = 'Teleports to a saved waypoint',
     Execute = function(WaypointName)
         -- Get local player's character information
-        local Char, Root, Humanoid, Head, Part = GetLocalPlayerInfo()
+        -- We only need Root here, so we use _ to ignore the rest
+        local _, Root, _, _, _ = GetLocalPlayerInfo()
         if not Root then
             Notify('Error', 'Goto Waypoint', 'Could not find your character\'s root part')
             return

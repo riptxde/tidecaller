@@ -206,7 +206,7 @@ RegisterCommand({
     Aliases = {},
     Description = 'Saves your current position',
     Execute = function()
-        local Char, Root = GetLocalPlayerInfo()
+        local _, Root = GetLocalPlayerInfo()
 
         if not Root then
             Notify('Error', 'Save Position', 'Could not find your character')
@@ -232,7 +232,7 @@ RegisterCommand({
             return
         end
 
-        local Char, Root = GetLocalPlayerInfo()
+        local _, Root = GetLocalPlayerInfo()
 
         if not Root then
             Notify('Error', 'Load Position', 'Could not find your character')
